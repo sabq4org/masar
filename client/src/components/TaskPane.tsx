@@ -4,6 +4,7 @@ import clsx from "clsx";
 import {
   Check,
   ChevronsLeft,
+  ChevronsRight,
   CircleAlert,
   Copy,
   Diamond,
@@ -33,8 +34,11 @@ function fmtSize(bytes: number, t: ReturnType<typeof useI18n>["t"]) {
 }
 
 export default function TaskPane() {
-  const { t } = useI18n();
+  const { t, dir } = useI18n();
   const { taskId, open, close } = useTaskPane();
+  /** مقابل الشريط الجانبي: يمين في الإنجليزية (LTR)، يسار في العربية (RTL) */
+  const sheetSide =
+    "fixed inset-y-0 end-0 z-40 w-full max-w-2xl border-s border-line bg-surface shadow-xl";
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [subtaskTitle, setSubtaskTitle] = useState("");
@@ -100,7 +104,7 @@ export default function TaskPane() {
   if (!taskId) return null;
   if (!task)
     return (
-      <aside className="masar-sheet fixed inset-y-0 left-0 z-40 w-full max-w-2xl border-r border-line bg-surface p-6 text-sm text-ink-3 shadow-xl">
+      <aside className={clsx("masar-sheet p-6 text-sm text-ink-3", sheetSide)}>
         {t("loading")}
       </aside>
     );
@@ -140,7 +144,7 @@ export default function TaskPane() {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-ink/10 lg:hidden" onClick={close} />
-      <aside className="masar-sheet fixed inset-y-0 left-0 z-40 flex w-full max-w-2xl flex-col border-r border-line bg-surface shadow-xl">
+      <aside className={clsx("masar-sheet flex flex-col", sheetSide)}>
         {/* ─── شريط الأدوات العلوي ─── */}
         <div className="flex flex-none items-center gap-1.5 border-b border-line px-3 py-2.5">
           <button
@@ -246,7 +250,7 @@ export default function TaskPane() {
             </Popover>
           </div>
           <button onClick={close} className="rounded-field p-1.5 text-ink-3 hover:text-ink" title={`${t("close")} (Esc)`}>
-            <ChevronsLeft size={16} />
+            {dir === "ltr" ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
           </button>
         </div>
 
