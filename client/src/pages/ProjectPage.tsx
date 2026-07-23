@@ -136,8 +136,49 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
   const addTask = useMutation({
     mutationFn: ({ title, groupId }: { title: string; groupId: number | null }) =>
       api("POST", "/api/tasks", { title, projectId: id, sectionId: groupId }),
-    onSuccess: invalidate,
-    onError: (e: Error) => flash(e.message),
+    onMutate: async ({ title, groupId }) => {
+      await queryClient.cancelQueries({ queryKey: [tasksKey] });
+      const prev = queryClient.getQueryData<TaskRow[] | null>([tasksKey]);
+      const optimistic = {
+        id: -Date.now(),
+        title,
+        description: null,
+        isCompleted: false,
+        completedAt: null,
+        taskType: "task" as const,
+        approvalStatus: null,
+        priority: null,
+        tags: [] as string[],
+        assigneeId: null,
+        projectId: id,
+        sectionId: groupId,
+        parentTaskId: null,
+        orderIndex: 9999,
+        myTasksSectionId: null,
+        myTasksOrderIndex: 0,
+        dueAt: null,
+        startAt: null,
+        linkUrl: null,
+        isArchived: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        assignee: null,
+        project: project
+          ? { id: project.id, name: project.name, color: project.color }
+          : null,
+        section: groupId
+          ? { id: groupId, title: sections.find((s) => s.id === groupId)?.title ?? "" }
+          : null,
+        subtasks: [],
+      } satisfies TaskRow;
+      queryClient.setQueryData<TaskRow[] | null>([tasksKey], (old) => [...(old ?? []), optimistic]);
+      return { prev };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.prev !== undefined) queryClient.setQueryData([tasksKey], ctx.prev);
+      flash(e.message);
+    },
+    onSettled: invalidate,
   });
 
   const patchTask = useMutation({
