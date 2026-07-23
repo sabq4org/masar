@@ -172,7 +172,7 @@ export default function Teams() {
                     key={m.id}
                     className="flex items-center gap-1.5 rounded-chip border border-line px-2 py-0.5 text-xs"
                   >
-                    <Avatar name={m.name} color={m.avatarColor} size={6} />
+                    <Avatar name={m.name} color={m.avatarColor} src={m.avatarUrl} size={6} />
                     {m.name}
                     <span className="text-ink-3">· {m.roleLabel}</span>
                   </span>

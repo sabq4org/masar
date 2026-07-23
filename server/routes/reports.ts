@@ -39,13 +39,14 @@ export function registerReportRoutes(app: Express) {
           id: users.id,
           name: users.name,
           avatarColor: users.avatarColor,
+          avatarUrl: users.avatarUrl,
           open: sql<number>`count(*)`,
           overdue: sql<number>`count(*) filter (where ${tasks.dueAt} < now())`,
         })
         .from(tasks)
         .innerJoin(users, eq(tasks.assigneeId, users.id))
         .where(and(notArchived, isOpen))
-        .groupBy(users.id, users.name, users.avatarColor)
+        .groupBy(users.id, users.name, users.avatarColor, users.avatarUrl)
         .orderBy(sql`count(*) desc`),
       db
         .select({
@@ -139,7 +140,7 @@ export function registerReportRoutes(app: Express) {
         lt(tasks.dueAt, new Date()),
       ),
       with: {
-        assignee: { columns: { id: true, name: true, avatarColor: true } },
+        assignee: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } },
         project: { columns: { id: true, name: true, color: true } },
       },
       orderBy: (t, { asc }) => [asc(t.dueAt)],
@@ -154,7 +155,7 @@ export function registerReportRoutes(app: Express) {
         eq(tasks.approvalStatus, "pending"),
       ),
       with: {
-        assignee: { columns: { id: true, name: true, avatarColor: true } },
+        assignee: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } },
         project: { columns: { id: true, name: true, color: true } },
       },
       orderBy: (t, { asc }) => [asc(t.updatedAt)],

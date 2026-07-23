@@ -9,7 +9,14 @@ import type { TaskRow } from "../lib/types";
 interface Overview {
   totals: { open: number; overdue: number; dueToday: number; done7d: number; total: number };
   byDepartment: { id: number; nameAr: string; color: string; open: number; overdue: number; done: number }[];
-  byUser: { id: number; name: string; avatarColor: string; open: number; overdue: number }[];
+  byUser: {
+    id: number;
+    name: string;
+    avatarColor: string;
+    avatarUrl?: string | null;
+    open: number;
+    overdue: number;
+  }[];
   byProject: { id: number; name: string; color: string; open: number; done: number; overdue: number }[];
 }
 
@@ -115,7 +122,7 @@ export default function Reports() {
               const max = Math.max(...data.byUser.map((x) => x.open), 1);
               return (
                 <div key={u.id} className="flex items-center gap-2">
-                  <Avatar name={u.name} color={u.avatarColor} size={6} />
+                  <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={6} />
                   <span className="w-24 flex-none truncate text-xs font-semibold">{u.name}</span>
                   <div className="h-4 flex-1 overflow-hidden rounded-md bg-line-soft">
                     <div
@@ -151,7 +158,7 @@ export default function Reports() {
                     className="flex w-full items-center gap-2 rounded-field border border-line-soft px-2.5 py-1.5 text-right text-xs font-semibold hover:bg-line-soft/50"
                   >
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={5} />}
+                    {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} src={t.assignee.avatarUrl} size={5} />}
                   </button>
                 ))}
                 {!(attention?.overdue ?? []).length && (
@@ -169,7 +176,7 @@ export default function Reports() {
                     className="flex w-full items-center gap-2 rounded-field border border-line-soft px-2.5 py-1.5 text-right text-xs font-semibold hover:bg-line-soft/50"
                   >
                     <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={5} />}
+                    {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} src={t.assignee.avatarUrl} size={5} />}
                   </button>
                 ))}
                 {!(attention?.awaitingApproval ?? []).length && (

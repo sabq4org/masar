@@ -7,13 +7,25 @@ import { dueLabel, dueTone } from "../lib/dates";
 export function Avatar({
   name,
   color,
+  src,
   size = 7,
 }: {
   name: string;
   color: string;
+  src?: string | null;
   size?: number;
 }) {
   const px = { 5: "h-5 w-5 text-[10px]", 6: "h-6 w-6 text-xs", 7: "h-7 w-7 text-xs", 8: "h-8 w-8 text-sm", 9: "h-9 w-9 text-sm", 12: "h-12 w-12 text-lg" }[size] ?? "h-7 w-7 text-xs";
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        title={name}
+        className={clsx("flex-none rounded-chip object-cover", px)}
+      />
+    );
+  }
   return (
     <span
       title={name}

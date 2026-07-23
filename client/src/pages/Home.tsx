@@ -76,7 +76,7 @@ export default function Home({ me }: { me: Me }) {
         {/* ─── بطاقة مهامي ─── */}
         <section className="rounded-card border border-line bg-surface shadow-card">
           <div className="flex items-center gap-3 border-b border-line-soft px-4 pt-3">
-            <Avatar name={me.name} color={me.avatarColor} size={8} />
+            <Avatar name={me.name} color={me.avatarColor} src={me.avatarUrl} size={8} />
             <div className="flex-1">
               <Link href="/my" className="text-sm font-bold hover:text-saffron">مهامي</Link>
               <div className="flex gap-4 pt-1.5">
@@ -196,7 +196,7 @@ export default function Home({ me }: { me: Me }) {
           <div className="flex flex-wrap gap-3">
             {users.map((u) => (
               <div key={u.id} className="flex w-24 flex-col items-center gap-1 rounded-field px-2 py-2 text-center hover:bg-line-soft/40">
-                <Avatar name={u.name} color={u.avatarColor} size={9} />
+                <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={9} />
                 <span className="w-full truncate text-[11px] font-semibold">{u.name}</span>
                 <span className="text-[10px] text-ink-3">{u.roleLabel}</span>
               </div>

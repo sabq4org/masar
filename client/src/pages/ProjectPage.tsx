@@ -302,7 +302,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
         <div className="hidden items-center sm:flex">
           <div className="flex -space-x-1.5 space-x-reverse">
             {(project.members ?? []).slice(0, 5).map((m) => (
-              <Avatar key={m.userId} name={m.name} color={m.avatarColor} size={7} />
+              <Avatar key={m.userId} name={m.name} color={m.avatarColor} src={m.avatarUrl} size={7} />
             ))}
           </div>
           {(project.members?.length ?? 0) > 5 && (
@@ -320,7 +320,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
             <div className="px-2 py-1 text-[10px] font-bold text-ink-3">أعضاء المشروع</div>
             {(project.members ?? []).map((m) => (
               <div key={m.userId} className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-line-soft">
-                <Avatar name={m.name} color={m.avatarColor} size={6} />
+                <Avatar name={m.name} color={m.avatarColor} src={m.avatarUrl} size={6} />
                 <span className="flex-1 truncate text-xs font-semibold">{m.name}</span>
                 <button
                   onClick={() => sectionOp.mutate({ method: "DELETE", url: `${projectKey}/members/${m.userId}` })}
@@ -341,7 +341,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
                   }
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
                 >
-                  <Avatar name={u.name} color={u.avatarColor} size={6} />
+                  <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={6} />
                   {u.name}
                 </button>
               ))}
@@ -570,7 +570,7 @@ function OverviewTab({
               return (
                 <div key={u.id} className="rounded-field border border-line-soft p-3">
                   <div className="mb-1 flex items-center gap-2">
-                    {u.createdBy && <Avatar name={u.createdBy.name} color={u.createdBy.avatarColor} size={6} />}
+                    {u.createdBy && <Avatar name={u.createdBy.name} color={u.createdBy.avatarColor} src={u.createdBy.avatarUrl} size={6} />}
                     <span className="text-xs font-bold">{u.createdBy?.name}</span>
                     <span
                       className="rounded-chip px-2 py-0.5 text-[10px] font-bold"
@@ -599,7 +599,7 @@ function OverviewTab({
           <div className="space-y-1.5">
             {(project.members ?? []).map((m) => (
               <div key={m.userId} className="flex items-center gap-2">
-                <Avatar name={m.name} color={m.avatarColor} size={7} />
+                <Avatar name={m.name} color={m.avatarColor} src={m.avatarUrl} size={7} />
                 <span className="truncate text-xs font-semibold">{m.name}</span>
                 {m.userId === project.ownerId && (
                   <span className="rounded-chip bg-line-soft px-1.5 text-[10px] font-bold text-ink-3">مالك</span>

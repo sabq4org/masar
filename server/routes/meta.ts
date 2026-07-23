@@ -106,6 +106,7 @@ export function registerMetaRoutes(app: Express) {
         role: users.role,
         departmentId: users.departmentId,
         avatarColor: users.avatarColor,
+        avatarUrl: users.avatarUrl,
       })
       .from(users)
       .where(eq(users.isActive, true))

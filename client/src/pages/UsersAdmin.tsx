@@ -13,6 +13,7 @@ interface AdminUser {
   role: string;
   departmentId: number | null;
   avatarColor: string;
+  avatarUrl?: string | null;
   isActive: boolean;
 }
 
@@ -145,7 +146,7 @@ export default function UsersAdmin() {
               <tr key={u.id} className={clsx(!u.isActive && "opacity-50")}>
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
-                    <Avatar name={u.name} color={u.avatarColor} />
+                    <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} />
                     <div>
                       <div className="font-bold">{u.name}</div>
                       <div dir="ltr" className="text-xs text-ink-3">{u.email}</div>

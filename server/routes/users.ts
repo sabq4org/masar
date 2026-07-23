@@ -25,6 +25,7 @@ export function registerUserAdminRoutes(app: Express) {
           role: users.role,
           departmentId: users.departmentId,
           avatarColor: users.avatarColor,
+          avatarUrl: users.avatarUrl,
           isActive: users.isActive,
           createdAt: users.createdAt,
         })

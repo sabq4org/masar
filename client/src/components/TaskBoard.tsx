@@ -272,7 +272,7 @@ function Card({
           <span className="text-[10px] tabular-nums text-ink-3">{subDone}/{subTotal} فرعية</span>
         )}
         <span className="flex-1" />
-        {task.assignee && <Avatar name={task.assignee.name} color={task.assignee.avatarColor} size={6} />}
+        {task.assignee && <Avatar name={task.assignee.name} color={task.assignee.avatarColor} src={task.assignee.avatarUrl} size={6} />}
       </div>
     </div>
   );
