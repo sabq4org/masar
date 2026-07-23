@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -10,13 +11,16 @@ import {
   Bell,
   UserCog,
   SlidersHorizontal,
+  LayoutTemplate,
   LogOut,
+  Moon,
+  Sun,
 } from "lucide-react";
 import clsx from "clsx";
-import { LayoutTemplate } from "lucide-react";
 import type { Me } from "../lib/types";
 import { api, queryClient } from "../lib/api";
 import { useLive } from "../lib/useLive";
+import { MasarLogo } from "./identity";
 
 const NAV = [
   { href: "/", label: "نظرة عامة", icon: LayoutDashboard },
@@ -37,6 +41,10 @@ const ADMIN_NAV = [
 export default function Layout({ me, children }: { me: Me; children: React.ReactNode }) {
   const [location] = useLocation();
   useLive();
+  const [night, setNight] = useState(
+    () => document.documentElement.dataset.theme === "night",
+  );
+
   const { data: notif } = useQuery<{ unread: number } | null>({
     queryKey: ["/api/notifications"],
     refetchInterval: 30_000,
@@ -44,6 +52,16 @@ export default function Layout({ me, children }: { me: Me; children: React.React
 
   const can = (perm?: string) =>
     !perm || me.permissions.includes("*") || me.permissions.includes(perm);
+
+  function toggleNight() {
+    const next = !night;
+    setNight(next);
+    if (next) document.documentElement.dataset.theme = "night";
+    else delete document.documentElement.dataset.theme;
+    try {
+      localStorage.setItem("masar-theme", next ? "night" : "paper");
+    } catch {}
+  }
 
   async function logout() {
     await api("POST", "/api/auth/logout");
@@ -66,14 +84,18 @@ export default function Layout({ me, children }: { me: Me; children: React.React
       <Link
         href={href}
         className={clsx(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold",
-          active ? "bg-accent-soft text-accent-ink" : "text-ink-2 hover:bg-line-soft",
+          "relative flex items-center gap-3 rounded-field px-3 py-2 text-sm font-semibold",
+          active ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-line-soft",
         )}
       >
-        <Icon size={18} />
+        {/* نقطة «أنت هنا» الزعفرانية */}
+        {active && (
+          <span className="absolute -right-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-chip bg-saffron" />
+        )}
+        <Icon size={18} strokeWidth={1.8} />
         <span className="flex-1">{label}</span>
         {badge > 0 && (
-          <span className="rounded-full bg-red-500 px-1.5 text-xs font-bold text-white tabular-nums">
+          <span className="rounded-chip bg-saffron px-1.5 text-xs font-bold text-paper tabular-nums">
             {badge}
           </span>
         )}
@@ -85,10 +107,10 @@ export default function Layout({ me, children }: { me: Me; children: React.React
 
   return (
     <div className="flex min-h-screen">
-      <aside className="fixed inset-y-0 right-0 flex w-56 flex-col border-l border-line bg-white">
+      <aside className="fixed inset-y-0 right-0 flex w-56 flex-col border-l border-line bg-surface">
         <div className="border-b border-line px-5 py-4">
-          <div className="text-2xl font-extrabold text-accent">مسار</div>
-          <div className="text-xs text-ink-3">صحيفة سبق</div>
+          <MasarLogo />
+          <div className="mt-1.5 text-[11px] font-medium text-ink-3">صحيفة سبق</div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {NAV.filter((i) => can(i.perm)).map((i) => (
@@ -106,7 +128,7 @@ export default function Layout({ me, children }: { me: Me; children: React.React
         <div className="border-t border-line p-3">
           <div className="flex items-center gap-2 px-2 py-1">
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-chip text-sm font-bold text-paper"
               style={{ background: me.avatarColor }}
             >
               {me.name.slice(0, 1)}
@@ -114,8 +136,15 @@ export default function Layout({ me, children }: { me: Me; children: React.React
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-bold">{me.name}</div>
             </div>
-            <button onClick={logout} title="خروج" className="text-ink-3 hover:text-red-600">
-              <LogOut size={16} />
+            <button
+              onClick={toggleNight}
+              title={night ? "الوضع الورقي" : "حبر الليل"}
+              className="text-ink-3 hover:text-saffron"
+            >
+              {night ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
+            </button>
+            <button onClick={logout} title="خروج" className="text-ink-3 hover:text-danger">
+              <LogOut size={16} strokeWidth={1.8} />
             </button>
           </div>
         </div>

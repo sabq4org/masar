@@ -56,7 +56,7 @@ export default function MyTasks() {
           e.preventDefault();
           if (quickTitle.trim()) quickAdd.mutate(quickTitle.trim());
         }}
-        className="mb-6 flex items-center gap-2 rounded-xl border border-line bg-white px-3 py-2"
+        className="mb-6 flex items-center gap-2 rounded-card border border-line bg-surface px-3 py-2"
       >
         <Plus size={18} className="text-accent" />
         <input
@@ -74,11 +74,11 @@ export default function MyTasks() {
           <section key={key} className="mb-6">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-ink-2">
               {label}
-              <span className="rounded-full bg-line-soft px-2 text-xs tabular-nums">{list.length}</span>
+              <span className="rounded-chip bg-line-soft px-2 text-xs tabular-nums">{list.length}</span>
             </h2>
-            <div className="divide-y divide-line-soft overflow-hidden rounded-xl border border-line bg-white">
+            <div className="divide-y divide-line-soft overflow-hidden rounded-card border border-line bg-surface">
               {list.length === 0 && (
-                <div className="px-4 py-6 text-center text-sm text-ink-3">لا مهام هنا 🎉</div>
+                <div className="px-4 py-6 text-center text-sm text-ink-3">لا مهام هنا — السطر أمامك نظيف</div>
               )}
               {list.map((t) => (
                 <button
@@ -88,7 +88,7 @@ export default function MyTasks() {
                 >
                   {t.project && (
                     <span
-                      className="h-2.5 w-2.5 flex-none rounded-full"
+                      className="h-2.5 w-2.5 flex-none rounded-chip"
                       title={t.project.name}
                       style={{ background: t.project.color }}
                     />

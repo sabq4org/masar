@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { api, queryClient } from "../lib/api";
 import type { DepartmentRow, ProjectRow } from "../lib/types";
+import { SariLine } from "../components/identity";
 
 const TYPE_LABELS: Record<string, string> = {
   coverage: "تغطية حدث",
@@ -31,7 +32,7 @@ export default function Projects() {
         name,
         type,
         departmentId: departmentId === "" ? null : departmentId,
-        color: dep?.color ?? "#2563B6",
+        color: dep?.color ?? "#33658A",
       });
     },
     onSuccess: () => {
@@ -47,7 +48,7 @@ export default function Projects() {
         <h1 className="text-2xl font-extrabold">المشاريع</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white hover:bg-accent-ink"
+          className="flex items-center gap-1.5 rounded-field bg-accent px-4 py-2 text-sm font-bold text-paper hover:opacity-90"
         >
           <Plus size={16} /> مشروع جديد
         </button>
@@ -59,14 +60,14 @@ export default function Projects() {
             e.preventDefault();
             if (name.trim()) create.mutate();
           }}
-          className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-white p-4"
+          className="mb-6 flex flex-wrap items-end gap-3 rounded-card border border-line bg-surface p-4"
         >
           <div className="min-w-56 flex-1">
             <label className="mb-1 block text-xs font-bold text-ink-2">اسم المشروع</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-line px-3 py-2 focus:border-accent focus:outline-none"
+              className="w-full rounded-field border border-line px-3 py-2 focus:border-saffron focus:outline-none"
               placeholder="مثال: تغطية موسم الحج"
             />
           </div>
@@ -75,7 +76,7 @@ export default function Projects() {
             <select
               value={type}
               onChange={(e) => setType(e.target.value)}
-              className="rounded-lg border border-line px-3 py-2"
+              className="rounded-field border border-line px-3 py-2"
             >
               {Object.entries(TYPE_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
@@ -87,7 +88,7 @@ export default function Projects() {
             <select
               value={departmentId}
               onChange={(e) => setDepartmentId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-line px-3 py-2"
+              className="rounded-field border border-line px-3 py-2"
             >
               <option value="">بلا فريق</option>
               {departments.map((d) => (
@@ -97,12 +98,12 @@ export default function Projects() {
           </div>
           <button
             disabled={create.isPending}
-            className="rounded-lg bg-accent px-5 py-2 font-bold text-white disabled:opacity-50"
+            className="rounded-field bg-accent px-5 py-2 font-bold text-paper disabled:opacity-50"
           >
             إنشاء
           </button>
           {create.isError && (
-            <div className="w-full text-sm text-red-600">{(create.error as Error).message}</div>
+            <div className="w-full text-sm text-danger">{(create.error as Error).message}</div>
           )}
         </form>
       )}
@@ -114,12 +115,12 @@ export default function Projects() {
             <Link
               key={p.id}
               href={`/projects/${p.id}`}
-              className="rounded-xl border border-line bg-white p-4 transition hover:shadow-md"
+              className="rounded-card border border-line bg-surface p-4 transition hover:shadow-md"
             >
               <div className="mb-2 flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full" style={{ background: p.color }} />
+                <span className="h-3 w-3 rounded-chip" style={{ background: p.color }} />
                 <span className="flex-1 truncate font-bold">{p.name}</span>
-                <span className="rounded-full bg-line-soft px-2 py-0.5 text-xs text-ink-2">
+                <span className="rounded-chip bg-line-soft px-2 py-0.5 text-xs text-ink-2">
                   {TYPE_LABELS[p.type] ?? p.type}
                 </span>
               </div>
@@ -127,14 +128,12 @@ export default function Projects() {
                 <span>{p.doneCount ?? 0} / {p.taskCount ?? 0} مهمة</span>
                 <span>{pct}٪</span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-line-soft">
-                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: p.color }} />
-              </div>
+              <div className="py-1"><SariLine progress={pct} color={p.color} /></div>
             </Link>
           );
         })}
         {projects.length === 0 && (
-          <div className="col-span-full rounded-xl border border-dashed border-line py-12 text-center text-ink-3">
+          <div className="col-span-full rounded-card border border-dashed border-line py-12 text-center text-ink-3">
             لا مشاريع بعد — أنشئ أول مشروع من الزر أعلاه
           </div>
         )}

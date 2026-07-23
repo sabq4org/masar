@@ -3,7 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>مسار — إدارة العمل التحريري</title>
+    <title>مسار — من الفكرة إلى النشر</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // تفعيل «حبر الليل» قبل الرسم الأول لتجنب الوميض
+      try {
+        if (localStorage.getItem("masar-theme") === "night")
+          document.documentElement.dataset.theme = "night";
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

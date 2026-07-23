@@ -12,19 +12,19 @@ const STATUSES: Array<{
   category: string;
   isDefault?: boolean;
 }> = [
-  { key: "idea", nameAr: "فكرة", color: "#5B6770", category: "planning", isDefault: true },
-  { key: "awaiting_assignment", nameAr: "بانتظار التكليف", color: "#475569", category: "planning" },
-  { key: "assigned", nameAr: "مكلّفة", color: "#4338CA", category: "active" },
-  { key: "in_progress", nameAr: "قيد العمل", color: "#1D4ED8", category: "active" },
-  { key: "awaiting_info", nameAr: "بانتظار المعلومات", color: "#92600A", category: "blocked" },
-  { key: "editing", nameAr: "قيد التحرير", color: "#6D28D9", category: "review" },
-  { key: "proofreading", nameAr: "قيد التدقيق", color: "#7E22CE", category: "review" },
-  { key: "awaiting_approval", nameAr: "بانتظار الاعتماد", color: "#9A4D0F", category: "review" },
-  { key: "ready", nameAr: "جاهزة للنشر", color: "#0F766E", category: "active" },
-  { key: "scheduled", nameAr: "مجدولة", color: "#0E7490", category: "active" },
-  { key: "published", nameAr: "منشورة", color: "#047857", category: "done" },
-  { key: "deferred", nameAr: "مؤجلة", color: "#57534E", category: "closed" },
-  { key: "cancelled", nameAr: "ملغاة", color: "#B91C1C", category: "closed" },
+  { key: "idea", nameAr: "فكرة", color: "#77705F", category: "planning", isDefault: true },
+  { key: "awaiting_assignment", nameAr: "بانتظار التكليف", color: "#46536B", category: "planning" },
+  { key: "assigned", nameAr: "مكلّفة", color: "#C98A3B", category: "active" },
+  { key: "in_progress", nameAr: "قيد العمل", color: "#C2701E", category: "active" },
+  { key: "awaiting_info", nameAr: "بانتظار المعلومات", color: "#A87A0E", category: "blocked" },
+  { key: "editing", nameAr: "قيد التحرير", color: "#4A7CA5", category: "review" },
+  { key: "proofreading", nameAr: "قيد التدقيق", color: "#33658A", category: "review" },
+  { key: "awaiting_approval", nameAr: "بانتظار الاعتماد", color: "#274E6D", category: "review" },
+  { key: "ready", nameAr: "جاهزة للنشر", color: "#55917A", category: "active" },
+  { key: "scheduled", nameAr: "مجدولة", color: "#3F8A69", category: "active" },
+  { key: "published", nameAr: "منشورة", color: "#2E7D5B", category: "done" },
+  { key: "deferred", nameAr: "مؤجلة", color: "#8C7347", category: "closed" },
+  { key: "cancelled", nameAr: "ملغاة", color: "#B0413E", category: "closed" },
 ];
 
 // الانتقالات المسموحة (المغلقة مسموحة من أي حالة عبر منطق الخدمة)
@@ -46,16 +46,16 @@ const TRANSITIONS: Array<[string, string]> = [
 ];
 
 const DEPARTMENTS: Array<{ nameAr: string; color: string; sortOrder: number }> = [
-  { nameAr: "الأخبار", color: "#2563B6", sortOrder: 1 },
-  { nameAr: "المحليات", color: "#0E7490", sortOrder: 2 },
-  { nameAr: "الاقتصاد", color: "#0F8A6D", sortOrder: 3 },
-  { nameAr: "الرياضة", color: "#5B8A1E", sortOrder: 4 },
-  { nameAr: "التقنية", color: "#6D4BD6", sortOrder: 5 },
-  { nameAr: "المنوعات", color: "#A333C8", sortOrder: 6 },
-  { nameAr: "التحقيقات", color: "#7C2D12", sortOrder: 7 },
-  { nameAr: "الفيديو", color: "#B91C50", sortOrder: 8 },
-  { nameAr: "الصور", color: "#A16207", sortOrder: 9 },
-  { nameAr: "السوشيال ميديا", color: "#C2570B", sortOrder: 10 },
+  { nameAr: "الأخبار", color: "#33658A", sortOrder: 1 },
+  { nameAr: "المحليات", color: "#2E7D5B", sortOrder: 2 },
+  { nameAr: "الاقتصاد", color: "#A87A0E", sortOrder: 3 },
+  { nameAr: "الرياضة", color: "#C2701E", sortOrder: 4 },
+  { nameAr: "التقنية", color: "#46536B", sortOrder: 5 },
+  { nameAr: "المنوعات", color: "#5D8FB5", sortOrder: 6 },
+  { nameAr: "التحقيقات", color: "#274E6D", sortOrder: 7 },
+  { nameAr: "الفيديو", color: "#B0413E", sortOrder: 8 },
+  { nameAr: "الصور", color: "#77705F", sortOrder: 9 },
+  { nameAr: "السوشيال ميديا", color: "#8C5A2E", sortOrder: 10 },
 ];
 
 const ADMIN_EMAIL = "sabq4u@gmail.com";

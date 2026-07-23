@@ -63,18 +63,18 @@ export default function Settings() {
     <div className="mx-auto max-w-5xl">
       <h1 className="mb-4 text-2xl font-extrabold">إعدادات سير العمل</h1>
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
+        <div className="mb-4 rounded-field border border-danger/30 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
           {error}
         </div>
       )}
 
       {/* الحالات */}
-      <section className="mb-8 rounded-xl border border-line bg-white p-4">
+      <section className="mb-8 rounded-card border border-line bg-surface p-4">
         <h2 className="mb-1 text-sm font-bold text-ink-2">الحالات</h2>
         <p className="mb-3 text-xs text-ink-3">عدّل الاسم واللون مباشرة — التغيير ينعكس على كل العروض</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {statuses.map((s) => (
-            <div key={s.id} className="flex items-center gap-2 rounded-lg border border-line-soft px-3 py-2">
+            <div key={s.id} className="flex items-center gap-2 rounded-field border border-line-soft px-3 py-2">
               <input
                 type="color"
                 value={s.color}
@@ -90,7 +90,7 @@ export default function Settings() {
                 }}
                 className="min-w-0 flex-1 rounded px-1 py-0.5 text-sm font-semibold focus:bg-line-soft focus:outline-none"
               />
-              <span className="flex-none rounded-full bg-line-soft px-2 py-0.5 text-[11px] text-ink-3">
+              <span className="flex-none rounded-chip bg-line-soft px-2 py-0.5 text-[11px] text-ink-3">
                 {CATEGORY_LABELS[s.category] ?? s.category}
               </span>
             </div>
@@ -99,7 +99,7 @@ export default function Settings() {
       </section>
 
       {/* مصفوفة الانتقالات */}
-      <section className="rounded-xl border border-line bg-white p-4">
+      <section className="rounded-card border border-line bg-surface p-4">
         <h2 className="mb-1 text-sm font-bold text-ink-2">الانتقالات المسموحة</h2>
         <p className="mb-3 text-xs text-ink-3">
           الصف = من حالة، والعمود = إلى حالة. «مؤجلة» و«ملغاة» مسموحتان دائمًا من أي حالة فلا تظهران هنا.
@@ -108,7 +108,7 @@ export default function Settings() {
           <table className="border-collapse text-xs">
             <thead>
               <tr>
-                <th className="sticky right-0 bg-white p-1.5 text-right font-bold text-ink-2">من ↓ / إلى ←</th>
+                <th className="sticky right-0 bg-surface p-1.5 text-right font-bold text-ink-2">من ↓ / إلى ←</th>
                 {nonClosed.map((s) => (
                   <th key={s.id} className="p-1.5 font-bold" style={{ color: s.color }}>
                     <div className="max-w-16 truncate" title={s.nameAr}>{s.nameAr}</div>
@@ -120,7 +120,7 @@ export default function Settings() {
               {nonClosed.map((from) => (
                 <tr key={from.id} className="border-t border-line-soft">
                   <td
-                    className="sticky right-0 whitespace-nowrap bg-white p-1.5 font-bold"
+                    className="sticky right-0 whitespace-nowrap bg-surface p-1.5 font-bold"
                     style={{ color: from.color }}
                   >
                     {from.nameAr}
@@ -138,7 +138,7 @@ export default function Settings() {
                           className={clsx(
                             "h-5 w-5 rounded border text-[11px] font-bold leading-none",
                             exists
-                              ? "border-emerald-600 bg-emerald-500 text-white"
+                              ? "border-success bg-success text-paper"
                               : "border-line bg-line-soft/50 text-transparent hover:border-ink-3",
                           )}
                           title={`${from.nameAr} ← ${to.nameAr}`}

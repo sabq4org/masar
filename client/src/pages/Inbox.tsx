@@ -47,15 +47,15 @@ export default function Inbox() {
         {items.some((n) => !n.isRead) && (
           <button
             onClick={() => readAll.mutate()}
-            className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-line-soft"
+            className="flex items-center gap-1.5 rounded-field border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-line-soft"
           >
             <CheckCheck size={15} /> قراءة الكل
           </button>
         )}
       </div>
-      <div className="divide-y divide-line-soft overflow-hidden rounded-xl border border-line bg-white">
+      <div className="divide-y divide-line-soft overflow-hidden rounded-card border border-line bg-surface">
         {items.length === 0 && (
-          <div className="px-4 py-12 text-center text-ink-3">لا إشعارات — صندوقك صافٍ ✨</div>
+          <div className="px-4 py-12 text-center text-ink-3">لا إشعارات — صندوقك صافٍ</div>
         )}
         {items.map((n) => (
           <button
@@ -69,7 +69,7 @@ export default function Inbox() {
               !n.isRead && "bg-accent-soft/40",
             )}
           >
-            {!n.isRead && <span className="mt-2 h-2 w-2 flex-none rounded-full bg-accent" />}
+            {!n.isRead && <span className="mt-2 h-2 w-2 flex-none rounded-chip bg-accent" />}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-2">
                 <span className="rounded bg-line-soft px-1.5 text-[11px] font-bold text-ink-2">

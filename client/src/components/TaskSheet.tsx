@@ -9,10 +9,10 @@ import type { Me, StatusRow, TaskDetail, TaskRow, UserLite } from "../lib/types"
 import { Avatar, PriorityChip, StatusChip } from "./bits";
 
 const APPROVAL_LABELS: Record<string, { label: string; cls: string }> = {
-  pending: { label: "بانتظار البتّ", cls: "bg-amber-100 text-amber-800" },
-  approved: { label: "معتمَد", cls: "bg-emerald-100 text-emerald-800" },
-  changes_requested: { label: "طُلبت تعديلات", cls: "bg-violet-100 text-violet-800" },
-  rejected: { label: "مرفوض", cls: "bg-red-100 text-red-700" },
+  pending: { label: "بانتظار البتّ", cls: "bg-wait/15 text-wait" },
+  approved: { label: "معتمَد", cls: "bg-success/15 text-success" },
+  changes_requested: { label: "طُلبت تعديلات", cls: "bg-review/15 text-review" },
+  rejected: { label: "مرفوض", cls: "bg-danger/15 text-danger" },
 };
 
 export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose: () => void }) {
@@ -113,7 +113,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-full max-w-lg flex-col border-r border-line bg-white shadow-xl">
+      <aside className="fixed inset-y-0 left-0 z-50 flex w-full max-w-lg flex-col border-r border-line bg-surface shadow-xl">
         <header className="flex items-start gap-3 border-b border-line p-4">
           <div className="flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -121,14 +121,14 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
               <PriorityChip priority={task.priority} />
               {task.project && (
                 <span
-                  className="rounded-full px-2 py-0.5 text-xs font-bold"
+                  className="rounded-chip px-2 py-0.5 text-xs font-bold"
                   style={{ background: task.project.color + "1f", color: task.project.color }}
                 >
                   {task.project.name}
                 </span>
               )}
               {openBlockers.length > 0 && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">
+                <span className="rounded-chip bg-wait/15 px-2 py-0.5 text-xs font-bold text-wait">
                   ⏸ محجوبة بـ{openBlockers.length}
                 </span>
               )}
@@ -139,15 +139,15 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
         </header>
 
         {error && (
-          <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
+          <div className="border-b border-danger/30 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
             {error}
           </div>
         )}
 
         {/* شريط قرار الاعتماد — يظهر للمعتمد المعني فقط */}
         {iAmApprover && (
-          <div className="border-b border-amber-200 bg-amber-50 p-3">
-            <div className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-900">
+          <div className="border-b border-wait/30 bg-wait/10 p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-bold text-wait">
               <ShieldCheck size={16} /> طلب اعتماد من {nameOf(pendingApproval!.requestedById)}
               {pendingApproval!.note && <span className="font-normal">— {pendingApproval!.note}</span>}
             </div>
@@ -155,24 +155,24 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
               value={decisionNote}
               onChange={(e) => setDecisionNote(e.target.value)}
               placeholder="ملاحظة القرار (اختيارية)…"
-              className="mb-2 w-full rounded-lg border border-amber-200 px-3 py-1.5 text-sm focus:outline-none"
+              className="mb-2 w-full rounded-field border border-wait/30 px-3 py-1.5 text-sm focus:outline-none"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => decide.mutate({ id: pendingApproval!.id, decision: "approved" })}
-                className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-sm font-bold text-white hover:bg-emerald-700"
+                className="flex-1 rounded-field bg-success py-1.5 text-sm font-bold text-paper hover:opacity-90"
               >
                 اعتماد
               </button>
               <button
                 onClick={() => decide.mutate({ id: pendingApproval!.id, decision: "changes_requested" })}
-                className="flex-1 rounded-lg bg-violet-600 py-1.5 text-sm font-bold text-white hover:bg-violet-700"
+                className="flex-1 rounded-field bg-review py-1.5 text-sm font-bold text-paper hover:opacity-90"
               >
                 طلب تعديل
               </button>
               <button
                 onClick={() => decide.mutate({ id: pendingApproval!.id, decision: "rejected" })}
-                className="flex-1 rounded-lg bg-red-600 py-1.5 text-sm font-bold text-white hover:bg-red-700"
+                className="flex-1 rounded-field bg-danger py-1.5 text-sm font-bold text-paper hover:opacity-90"
               >
                 رفض
               </button>
@@ -189,7 +189,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                   <button
                     key={s.id}
                     onClick={() => mutateStatus.mutate(s.id)}
-                    className="rounded-full border px-2.5 py-0.5 text-xs font-bold transition hover:opacity-70"
+                    className="rounded-chip border px-2.5 py-0.5 text-xs font-bold transition hover:opacity-70"
                     style={{ borderColor: s.color, color: s.color }}
                   >
                     {s.nameAr}
@@ -205,7 +205,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                 onChange={(e) =>
                   mutateTask.mutate({ assigneeId: e.target.value ? Number(e.target.value) : null })
                 }
-                className="w-full rounded-lg border border-line px-2 py-1.5 text-sm"
+                className="w-full rounded-field border border-line px-2 py-1.5 text-sm"
               >
                 <option value="">بلا مسؤول</option>
                 {users.map((u) => (
@@ -220,14 +220,14 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                 onChange={(e) =>
                   mutateTask.mutate({ dueAt: e.target.value ? new Date(e.target.value) : null })
                 }
-                className="w-full rounded-lg border border-line px-2 py-1.5 text-sm tabular-nums"
+                className="w-full rounded-field border border-line px-2 py-1.5 text-sm tabular-nums"
               />
             </Field>
             <Field label="الأولوية">
               <select
                 value={task.priority}
                 onChange={(e) => mutateTask.mutate({ priority: e.target.value })}
-                className="w-full rounded-lg border border-line px-2 py-1.5 text-sm"
+                className="w-full rounded-field border border-line px-2 py-1.5 text-sm"
               >
                 <option value="low">منخفضة</option>
                 <option value="normal">عادية</option>
@@ -244,7 +244,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                   if (v !== (task.linkUrl ?? "")) mutateTask.mutate({ linkUrl: v || null });
                 }}
                 placeholder="https://…"
-                className="w-full rounded-lg border border-line px-2 py-1.5 text-left text-sm"
+                className="w-full rounded-field border border-line px-2 py-1.5 text-left text-sm"
               />
             </Field>
           </div>
@@ -258,7 +258,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
               }}
               rows={3}
               placeholder="تفاصيل المهمة…"
-              className="w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
+              className="w-full rounded-field border border-line px-3 py-2 text-sm focus:border-saffron focus:outline-none"
             />
           </Field>
 
@@ -271,16 +271,16 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                 return (
                   <div
                     key={d.id}
-                    className="flex items-center gap-2 rounded-lg border border-line-soft px-2.5 py-1.5 text-sm"
+                    className="flex items-center gap-2 rounded-field border border-line-soft px-2.5 py-1.5 text-sm"
                   >
-                    <Link2 size={14} className={done ? "text-emerald-600" : "text-amber-600"} />
+                    <Link2 size={14} className={done ? "text-success" : "text-wait"} />
                     <span className={clsx("flex-1 truncate", done && "text-ink-3 line-through")}>
                       {d.title}
                     </span>
                     {s && <StatusChip status={s} />}
                     <button
                       onClick={() => removeDependency.mutate(d.id)}
-                      className="text-ink-3 hover:text-red-600"
+                      className="text-ink-3 hover:text-danger"
                       title="إزالة العائق"
                     >
                       <Trash2 size={13} />
@@ -293,7 +293,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                   autoFocus
                   onChange={(e) => e.target.value && addDependency.mutate(Number(e.target.value))}
                   onBlur={() => setAddingDep(false)}
-                  className="w-full rounded-lg border border-accent px-2 py-1.5 text-sm"
+                  className="w-full rounded-field border border-accent px-2 py-1.5 text-sm"
                   defaultValue=""
                 >
                   <option value="" disabled>اختر المهمة الحاجبة…</option>
@@ -304,7 +304,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
               ) : (
                 <button
                   onClick={() => setAddingDep(true)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-saffron hover:underline"
                 >
                   <Plus size={13} /> إضافة عائق
                 </button>
@@ -319,7 +319,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                 const st = APPROVAL_LABELS[a.state] ?? APPROVAL_LABELS.pending;
                 return (
                   <div key={a.id} className="flex items-center gap-2 text-sm">
-                    <span className={clsx("rounded-full px-2 py-0.5 text-xs font-bold", st.cls)}>
+                    <span className={clsx("rounded-chip px-2 py-0.5 text-xs font-bold", st.cls)}>
                       {st.label}
                     </span>
                     <span className="text-xs text-ink-2">
@@ -335,7 +335,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                     <select
                       value={approverId}
                       onChange={(e) => setApproverId(e.target.value ? Number(e.target.value) : "")}
-                      className="flex-1 rounded-lg border border-line px-2 py-1.5 text-sm"
+                      className="flex-1 rounded-field border border-line px-2 py-1.5 text-sm"
                     >
                       <option value="">اختر المعتمد…</option>
                       {users.filter((u) => u.id !== me?.id).map((u) => (
@@ -345,7 +345,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                     <button
                       disabled={!approverId || requestApproval.isPending}
                       onClick={() => requestApproval.mutate()}
-                      className="rounded-lg bg-accent px-3 py-1.5 text-sm font-bold text-white disabled:opacity-40"
+                      className="rounded-field bg-accent px-3 py-1.5 text-sm font-bold text-paper disabled:opacity-40"
                     >
                       إرسال
                     </button>
@@ -353,7 +353,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                 ) : (
                   <button
                     onClick={() => setRequestingApproval(true)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-saffron hover:underline"
                   >
                     <ShieldCheck size={13} /> طلب اعتماد
                   </button>
@@ -369,7 +369,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                 onClick={() => aiSplit.mutate()}
                 disabled={aiSplit.isPending}
                 title="تقسيم المهمة بالذكاء الاصطناعي"
-                className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline disabled:opacity-50"
+                className="flex items-center gap-1 text-xs font-semibold text-review hover:underline disabled:opacity-50"
               >
                 <Sparkles size={13} /> {aiSplit.isPending ? "يقسّم…" : "تقسيم ذكي"}
               </button>
@@ -380,10 +380,10 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
                 <button
                   key={s.id}
                   onClick={() => toggleSubtask.mutate({ id: s.id, isDone: !s.isDone })}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1 text-right text-sm hover:bg-line-soft"
+                  className="flex w-full items-center gap-2 rounded-field px-2 py-1 text-right text-sm hover:bg-line-soft"
                 >
                   {s.isDone ? (
-                    <CheckSquare size={16} className="text-emerald-600" />
+                    <CheckSquare size={16} className="text-success" />
                   ) : (
                     <Square size={16} className="text-ink-3" />
                   )}
@@ -414,7 +414,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
               {task.comments.map((c) => (
                 <div key={c.id} className="flex gap-2">
                   <Avatar name={c.user.name} color={c.user.avatarColor} size={6} />
-                  <div className="flex-1 rounded-lg bg-line-soft px-3 py-2">
+                  <div className="flex-1 rounded-field bg-line-soft px-3 py-2">
                     <div className="mb-0.5 flex items-baseline justify-between">
                       <span className="text-xs font-bold">{c.user.name}</span>
                       <span className="text-[11px] text-ink-3 tabular-nums">
@@ -430,7 +430,7 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
             </div>
           </Field>
 
-          <details className="rounded-lg border border-line-soft p-2">
+          <details className="rounded-field border border-line-soft p-2">
             <summary className="cursor-pointer text-xs font-bold text-ink-3">
               سجل النشاط ({task.activity.length})
             </summary>
@@ -459,11 +459,11 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="اكتب تعليقًا…"
-              className="flex-1 rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none"
+              className="flex-1 rounded-field border border-line px-3 py-2 text-sm focus:border-saffron focus:outline-none"
             />
             <button
               disabled={addComment.isPending || !comment.trim()}
-              className="rounded-lg bg-accent p-2 text-white disabled:opacity-40"
+              className="rounded-field bg-accent p-2 text-paper disabled:opacity-40"
             >
               <Send size={16} />
             </button>

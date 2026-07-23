@@ -86,7 +86,7 @@ export default function ProjectBoard({ id }: { id: number }) {
 
   const saveTemplate = useMutation({
     mutationFn: (name: string) => api("POST", `/api/projects/${id}/save-template`, { name }),
-    onSuccess: () => showError("حُفظ القالب بنجاح — تجده في صفحة القوالب ✓"),
+    onSuccess: () => showError("حُفظ القالب — تجده في صفحة القوالب"),
     onError: (e: Error) => showError(e.message),
   });
 
@@ -110,8 +110,8 @@ export default function ProjectBoard({ id }: { id: number }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-3">
-        <Link href="/projects" className="text-ink-3 hover:text-accent"><ArrowRight size={20} /></Link>
-        <span className="h-3.5 w-3.5 rounded-full" style={{ background: project?.color }} />
+        <Link href="/projects" className="text-ink-3 hover:text-saffron"><ArrowRight size={20} /></Link>
+        <span className="h-3.5 w-3.5 rounded-chip" style={{ background: project?.color }} />
         <h1 className="flex-1 text-2xl font-extrabold">{project?.name ?? "…"}</h1>
         {canManage && (
           <button
@@ -119,7 +119,7 @@ export default function ProjectBoard({ id }: { id: number }) {
               const name = prompt("اسم القالب:", `قالب — ${project?.name ?? ""}`);
               if (name?.trim()) saveTemplate.mutate(name.trim());
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-line-soft"
+            className="flex items-center gap-1.5 rounded-field border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-line-soft"
           >
             <BookmarkPlus size={15} /> حفظ كقالب
           </button>
@@ -128,21 +128,21 @@ export default function ProjectBoard({ id }: { id: number }) {
 
       {/* شريط العروض والفلاتر */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex rounded-lg border border-line bg-white p-0.5">
+        <div className="flex rounded-field border border-line bg-surface p-0.5">
           {VIEWS.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setView(key)}
               className={clsx(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold",
-                view === key ? "bg-accent-soft text-accent-ink" : "text-ink-3 hover:text-ink",
+                view === key ? "bg-accent-soft text-ink" : "text-ink-3 hover:text-ink",
               )}
             >
               <Icon size={15} /> {label}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1.5">
+        <div className="flex items-center gap-1.5 rounded-field border border-line bg-surface px-2.5 py-1.5">
           <Search size={14} className="text-ink-3" />
           <input
             value={q}
@@ -154,7 +154,7 @@ export default function ProjectBoard({ id }: { id: number }) {
         <select
           value={filterAssignee}
           onChange={(e) => setFilterAssignee(e.target.value ? Number(e.target.value) : "")}
-          className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-sm"
+          className="rounded-field border border-line bg-surface px-2.5 py-1.5 text-sm"
         >
           <option value="">كل المسؤولين</option>
           {users.map((u) => (
@@ -164,7 +164,7 @@ export default function ProjectBoard({ id }: { id: number }) {
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-sm"
+          className="rounded-field border border-line bg-surface px-2.5 py-1.5 text-sm"
         >
           <option value="">كل الأولويات</option>
           <option value="urgent">عاجلة</option>
@@ -175,7 +175,7 @@ export default function ProjectBoard({ id }: { id: number }) {
         {(q || filterAssignee !== "" || filterPriority) && (
           <button
             onClick={() => { setQ(""); setFilterAssignee(""); setFilterPriority(""); }}
-            className="text-xs font-semibold text-accent hover:underline"
+            className="text-xs font-semibold text-saffron hover:underline"
           >
             مسح الفلاتر ({tasks.length}/{allTasks.length})
           </button>
@@ -183,7 +183,7 @@ export default function ProjectBoard({ id }: { id: number }) {
       </div>
 
       {error && (
-        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
+        <div className="mb-3 rounded-field border border-wait/30 bg-wait/10 px-4 py-2 text-sm font-semibold text-wait">
           {error}
         </div>
       )}
@@ -217,7 +217,7 @@ export default function ProjectBoard({ id }: { id: number }) {
       )}
 
       {view === "list" && (
-        <div className="overflow-x-auto rounded-xl border border-line bg-white">
+        <div className="overflow-x-auto rounded-card border border-line bg-surface">
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-line bg-line-soft/60 text-right text-xs text-ink-2">
@@ -279,15 +279,15 @@ function Column({
     <div
       ref={setNodeRef}
       className={clsx(
-        "flex w-64 flex-none flex-col rounded-xl border bg-white/70 p-2",
+        "flex w-64 flex-none flex-col rounded-card border bg-surface/70 p-2",
         isOver ? "border-accent bg-accent-soft/60" : "border-line",
       )}
     >
       <div className="mb-2 flex items-center gap-2 px-1.5 py-1">
-        <span className="h-2 w-2 rounded-full" style={{ background: status.color }} />
+        <span className="h-2 w-2 rounded-chip" style={{ background: status.color }} />
         <span className="flex-1 text-sm font-bold" style={{ color: status.color }}>{status.nameAr}</span>
         <span className="text-xs tabular-nums text-ink-3">{tasks.length}</span>
-        <button onClick={onStartAdd} className="text-ink-3 hover:text-accent" title="إضافة"><Plus size={15} /></button>
+        <button onClick={onStartAdd} className="text-ink-3 hover:text-saffron" title="إضافة"><Plus size={15} /></button>
       </div>
       {adding && (
         <form onSubmit={(e) => { e.preventDefault(); onSubmitAdd(); }} className="mb-2">
@@ -297,7 +297,7 @@ function Column({
             onChange={(e) => setNewTitle(e.target.value)}
             onBlur={onSubmitAdd}
             placeholder="عنوان المهمة…"
-            className="w-full rounded-lg border border-accent px-2 py-1.5 text-sm focus:outline-none"
+            className="w-full rounded-field border border-accent px-2 py-1.5 text-sm focus:outline-none"
           />
         </form>
       )}
@@ -329,9 +329,9 @@ function Card({ task, overlay }: { task: TaskRow; overlay?: boolean }) {
   return (
     <div
       className={clsx(
-        "cursor-grab rounded-lg border border-line bg-white p-2.5 text-right shadow-sm",
+        "cursor-grab rounded-field border border-line bg-surface p-2.5 text-right shadow-sm",
         overlay && "rotate-2 shadow-lg",
-        task.priority === "urgent" && "border-r-4 border-r-red-500",
+        task.priority === "urgent" && "border-r-4 border-r-saffron",
       )}
     >
       <div className="mb-1.5 text-sm font-semibold leading-snug">{task.title}</div>

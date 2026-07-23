@@ -29,7 +29,7 @@ export const session = pgTable(
 export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
   nameAr: text("name_ar").notNull().unique(),
-  color: varchar("color", { length: 7 }).notNull().default("#2563B6"),
+  color: varchar("color", { length: 7 }).notNull().default("#33658A"),
   icon: varchar("icon", { length: 40 }),
   sortOrder: integer("sort_order").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
@@ -91,7 +91,7 @@ export const projects = pgTable(
     type: varchar("type", { length: 20 }).notNull().default("ops"), // coverage|file|campaign|dev|ops
     departmentId: integer("department_id").references(() => departments.id),
     ownerId: integer("owner_id").references(() => users.id),
-    color: varchar("color", { length: 7 }).notNull().default("#2563B6"),
+    color: varchar("color", { length: 7 }).notNull().default("#33658A"),
     status: varchar("status", { length: 20 }).notNull().default("active"), // active|archived
     startAt: timestamp("start_at"),
     endAt: timestamp("end_at"),
@@ -264,7 +264,7 @@ export const projectTemplates = pgTable("project_templates", {
   name: text("name").notNull(),
   description: text("description"),
   type: varchar("type", { length: 20 }).notNull().default("ops"),
-  color: varchar("color", { length: 7 }).notNull().default("#2563B6"),
+  color: varchar("color", { length: 7 }).notNull().default("#33658A"),
   // { sections: [{ title, tasks: [{ title, priority }] }] }
   structure: jsonb("structure").notNull(),
   createdById: integer("created_by_id").references(() => users.id),

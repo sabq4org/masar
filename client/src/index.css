@@ -2,14 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-paper text-ink font-sans antialiased;
+/* ─── هوية «الخطّ الساري» — Design Tokens ─── */
+:root {
+  --masar-ink: #1e2735;
+  --masar-ink-2: #46536b;
+  --masar-muted: #77705f;
+  --masar-paper: #f7f3eb;
+  --masar-surface: #fffdf8;
+  --masar-line: #e4ddce;
+  --masar-line-soft: #eee9dd;
+  --masar-saffron: #c2701e;
+  --masar-saffron-soft: #c2701e1f;
+  --masar-success: #2e7d5b;
+  --masar-wait: #a87a0e;
+  --masar-review: #33658a;
+  --masar-danger: #b0413e;
+  --shadow-card: 0 1px 2px #1e273514;
+}
+[data-theme="night"] {
+  --masar-ink: #f0ebe0;
+  --masar-ink-2: #c4bdae;
+  --masar-muted: #8f897b;
+  --masar-paper: #15181e;
+  --masar-surface: #1e222a;
+  --masar-line: #2c3038;
+  --masar-line-soft: #262a32;
+  --masar-saffron: #e09640;
+  --masar-saffron-soft: #e0964026;
+  --masar-success: #4a9877;
+  --masar-wait: #c99a2e;
+  --masar-review: #5d8fb5;
+  --masar-danger: #d06b67;
+  --shadow-card: 0 1px 2px #00000040;
 }
 
-::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
+body {
+  @apply bg-paper text-ink font-sans antialiased;
+  line-height: 1.9;
 }
-::-webkit-scrollbar-thumb {
-  @apply bg-line rounded-full;
+
+h1, h2 {
+  font-family: "Alexandria", "IBM Plex Sans Arabic", sans-serif;
 }
+
+/* اللاتيني والأرقام التقنية */
+[dir="ltr"], input[dir="ltr"], code {
+  font-family: "Space Grotesk", "IBM Plex Sans Arabic", monospace;
+}
+
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* حركة هادئة 200ms ease-out — لا ارتداد */
+button, a, input, select, textarea {
+  transition:
+    background-color 200ms ease-out,
+    color 200ms ease-out,
+    border-color 200ms ease-out,
+    opacity 200ms ease-out,
+    box-shadow 200ms ease-out;
+}
+
+/* التركيز بلوحة المفاتيح: هالة زعفرانية دائمًا */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--masar-saffron-soft), 0 0 0 1.5px var(--masar-saffron);
+  border-radius: 6px;
+}
+
+/* نبض «عاجل» — الحركة الدائمة الوحيدة المسموحة بدلالة يحدث الآن */
+@keyframes masar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.masar-urgent-dot { animation: masar-pulse 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .masar-urgent-dot { animation: none; }
+  button, a, input, select, textarea { transition: none; }
+}
+
+::-webkit-scrollbar { height: 8px; width: 8px; }
+::-webkit-scrollbar-thumb { background: var(--masar-line); border-radius: 999px; }

@@ -39,7 +39,7 @@ export default function Timeline({
 
   if (!range)
     return (
-      <div className="rounded-xl border border-dashed border-line py-12 text-center text-sm text-ink-3">
+      <div className="rounded-card border border-dashed border-line py-12 text-center text-sm text-ink-3">
         لا مهام بمواعيد استحقاق لعرضها على الخط الزمني
       </div>
     );
@@ -55,7 +55,7 @@ export default function Timeline({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-white">
+    <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex">
         {/* عمود العناوين */}
         <div className="w-48 flex-none border-l border-line">
@@ -69,7 +69,7 @@ export default function Timeline({
             >
               {task.project && (
                 <span
-                  className="h-2 w-2 flex-none rounded-full"
+                  className="h-2 w-2 flex-none rounded-chip"
                   style={{ background: task.project.color }}
                 />
               )}
@@ -94,7 +94,7 @@ export default function Timeline({
             {/* خط اليوم */}
             {todayX > 0 && todayX < width && (
               <div
-                className="absolute bottom-0 top-9 z-10 w-px bg-red-500"
+                className="absolute bottom-0 top-9 z-10 w-px bg-danger"
                 style={{ left: todayX }}
                 title="اليوم"
               />
@@ -110,7 +110,7 @@ export default function Timeline({
                 <div key={task.id} className="relative h-9 border-b border-line-soft">
                   <button
                     onClick={() => onOpen(task.id)}
-                    className="absolute top-1.5 h-6 rounded-md px-2 text-[10px] font-bold text-white shadow-sm transition hover:opacity-80"
+                    className="absolute top-1.5 h-6 rounded-md px-2 text-[10px] font-bold text-paper shadow-sm transition hover:opacity-80"
                     style={{
                       left,
                       width: w,

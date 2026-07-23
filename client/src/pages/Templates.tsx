@@ -36,7 +36,7 @@ export default function Templates() {
       </p>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
+        <div className="mb-4 rounded-field border border-danger/30 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
           {error}
         </div>
       )}
@@ -49,13 +49,13 @@ export default function Templates() {
           }[];
           const taskCount = sections.reduce((n, s) => n + s.tasks.length, 0);
           return (
-            <div key={t.id} className="rounded-xl border border-line bg-white p-4">
+            <div key={t.id} className="rounded-card border border-line bg-surface p-4">
               <div className="mb-2 flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />
+                <span className="h-3 w-3 rounded-chip" style={{ background: t.color }} />
                 <h2 className="flex-1 truncate font-bold">{t.name}</h2>
                 <button
                   onClick={() => confirm(`حذف قالب «${t.name}»؟`) && remove.mutate(t.id)}
-                  className="text-ink-3 hover:text-red-600"
+                  className="text-ink-3 hover:text-danger"
                   title="حذف القالب"
                 >
                   <Trash2 size={15} />
@@ -76,7 +76,7 @@ export default function Templates() {
                   const name = prompt("اسم المشروع الجديد:", t.name.replace(/^قالب\s*[—-]\s*/, ""));
                   if (name?.trim()) instantiate.mutate({ id: t.id, name: name.trim() });
                 }}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent py-2 text-sm font-bold text-white hover:bg-accent-ink"
+                className="flex w-full items-center justify-center gap-1.5 rounded-field bg-accent py-2 text-sm font-bold text-paper hover:opacity-90"
               >
                 <FolderPlus size={15} /> إنشاء مشروع من القالب
               </button>
@@ -84,7 +84,7 @@ export default function Templates() {
           );
         })}
         {templates.length === 0 && (
-          <div className="col-span-full rounded-xl border border-dashed border-line py-12 text-center text-ink-3">
+          <div className="col-span-full rounded-card border border-dashed border-line py-12 text-center text-ink-3">
             <Sparkles className="mx-auto mb-2 text-ink-3" size={24} />
             لا قوالب بعد — افتح أي مشروع واضغط «حفظ كقالب»
           </div>

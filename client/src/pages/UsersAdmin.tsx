@@ -70,14 +70,14 @@ export default function UsersAdmin() {
         <h1 className="text-2xl font-extrabold">المستخدمون</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-bold text-white hover:bg-accent-ink"
+          className="flex items-center gap-1.5 rounded-field bg-accent px-4 py-2 text-sm font-bold text-paper hover:opacity-90"
         >
           <Plus size={16} /> مستخدم جديد
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
+        <div className="mb-4 rounded-field border border-danger/30 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger">
           {error}
         </div>
       )}
@@ -88,7 +88,7 @@ export default function UsersAdmin() {
             e.preventDefault();
             create.mutate();
           }}
-          className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="mb-6 grid grid-cols-1 gap-3 rounded-card border border-line bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3"
         >
           <Input label="الاسم" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
           <Input label="البريد" type="email" dir="ltr" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
@@ -98,7 +98,7 @@ export default function UsersAdmin() {
             <select
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="w-full rounded-lg border border-line px-3 py-2 text-sm"
+              className="w-full rounded-field border border-line px-3 py-2 text-sm"
             >
               {roles.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -110,7 +110,7 @@ export default function UsersAdmin() {
             <select
               value={form.departmentId}
               onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-              className="w-full rounded-lg border border-line px-3 py-2 text-sm"
+              className="w-full rounded-field border border-line px-3 py-2 text-sm"
             >
               <option value="">بلا فريق</option>
               {departments.map((d) => (
@@ -121,7 +121,7 @@ export default function UsersAdmin() {
           <div className="flex items-end">
             <button
               disabled={create.isPending}
-              className="w-full rounded-lg bg-accent py-2 font-bold text-white disabled:opacity-50"
+              className="w-full rounded-field bg-accent py-2 font-bold text-paper disabled:opacity-50"
             >
               إنشاء
             </button>
@@ -129,7 +129,7 @@ export default function UsersAdmin() {
         </form>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-white">
+      <div className="overflow-x-auto rounded-card border border-line bg-surface">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-line bg-line-soft/60 text-right text-xs text-ink-2">
@@ -156,7 +156,7 @@ export default function UsersAdmin() {
                   <select
                     value={u.role}
                     onChange={(e) => update.mutate({ id: u.id, patch: { role: e.target.value } })}
-                    className="rounded-lg border border-line px-2 py-1 text-xs"
+                    className="rounded-field border border-line px-2 py-1 text-xs"
                   >
                     {roles.map((r) => (
                       <option key={r.value} value={r.value}>{r.label}</option>
@@ -172,7 +172,7 @@ export default function UsersAdmin() {
                         patch: { departmentId: e.target.value ? Number(e.target.value) : null },
                       })
                     }
-                    className="rounded-lg border border-line px-2 py-1 text-xs"
+                    className="rounded-field border border-line px-2 py-1 text-xs"
                   >
                     <option value="">بلا فريق</option>
                     {departments.map((d) => (
@@ -184,8 +184,8 @@ export default function UsersAdmin() {
                   <button
                     onClick={() => update.mutate({ id: u.id, patch: { isActive: !u.isActive } })}
                     className={clsx(
-                      "rounded-full px-2.5 py-0.5 text-xs font-bold",
-                      u.isActive ? "bg-emerald-50 text-emerald-700" : "bg-line-soft text-ink-3",
+                      "rounded-chip px-2.5 py-0.5 text-xs font-bold",
+                      u.isActive ? "bg-success/15 text-success" : "bg-line-soft text-ink-3",
                     )}
                   >
                     {u.isActive ? "نشط" : "معطّل"}
@@ -195,7 +195,7 @@ export default function UsersAdmin() {
                   <button
                     onClick={() => resetPassword(u)}
                     title="إعادة تعيين كلمة المرور"
-                    className="text-ink-3 hover:text-accent"
+                    className="text-ink-3 hover:text-saffron"
                   >
                     <KeyRound size={15} />
                   </button>
@@ -232,7 +232,7 @@ function Input({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={clsx(
-          "w-full rounded-lg border border-line px-3 py-2 text-sm focus:border-accent focus:outline-none",
+          "w-full rounded-field border border-line px-3 py-2 text-sm focus:border-saffron focus:outline-none",
           dir === "ltr" && "text-left",
         )}
       />

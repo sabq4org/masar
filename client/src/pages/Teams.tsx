@@ -30,9 +30,9 @@ export default function Teams() {
           const members = users.filter((u) => u.departmentId === d.id);
           const s = stats.find((x) => x.id === d.id);
           return (
-            <div key={d.id} className="rounded-xl border border-line bg-white p-4">
+            <div key={d.id} className="rounded-card border border-line bg-surface p-4">
               <div className="mb-3 flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full" style={{ background: d.color }} />
+                <span className="h-3 w-3 rounded-chip" style={{ background: d.color }} />
                 <h2 className="flex-1 font-bold">{d.nameAr}</h2>
                 <span className="text-xs text-ink-3">{members.length} عضو</span>
               </div>
@@ -40,10 +40,10 @@ export default function Teams() {
                 <span className="text-ink-2">
                   مفتوحة <b className="tabular-nums">{s?.open ?? 0}</b>
                 </span>
-                <span className={s?.overdue ? "font-bold text-red-600" : "text-ink-2"}>
+                <span className={s?.overdue ? "font-bold text-danger" : "text-ink-2"}>
                   متأخرة <b className="tabular-nums">{s?.overdue ?? 0}</b>
                 </span>
-                <span className="text-emerald-700">
+                <span className="text-success">
                   منجزة <b className="tabular-nums">{s?.done ?? 0}</b>
                 </span>
               </div>
@@ -51,7 +51,7 @@ export default function Teams() {
                 {members.map((m) => (
                   <span
                     key={m.id}
-                    className="flex items-center gap-1.5 rounded-full border border-line px-2 py-0.5 text-xs"
+                    className="flex items-center gap-1.5 rounded-chip border border-line px-2 py-0.5 text-xs"
                   >
                     <Avatar name={m.name} color={m.avatarColor} size={6} />
                     {m.name}

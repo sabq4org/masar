@@ -8,8 +8,8 @@ import { requirePermission } from "../auth";
 import { PERMISSIONS, ROLES, ROLE_LABELS_AR } from "../permissions";
 
 const AVATAR_COLORS = [
-  "#2563B6", "#0E7490", "#0F8A6D", "#5B8A1E", "#A16207",
-  "#C2570B", "#B91C50", "#A333C8", "#6D4BD6", "#475569",
+  "#33658A", "#2E7D5B", "#A87A0E", "#C2701E", "#46536B",
+  "#5D8FB5", "#274E6D", "#B0413E", "#77705F", "#8C5A2E",
 ];
 
 export function registerUserAdminRoutes(app: Express) {

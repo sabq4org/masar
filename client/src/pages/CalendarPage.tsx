@@ -52,7 +52,7 @@ export default function CalendarPage() {
         <h1 className="flex-1 text-2xl font-extrabold">التقويم</h1>
         <button
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-          className="rounded-lg border border-line p-1.5 hover:bg-line-soft"
+          className="rounded-field border border-line p-1.5 hover:bg-line-soft"
           title="الشهر السابق"
         >
           <ChevronRight size={16} />
@@ -60,7 +60,7 @@ export default function CalendarPage() {
         <span className="min-w-32 text-center font-bold">{monthLabel}</span>
         <button
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-          className="rounded-lg border border-line p-1.5 hover:bg-line-soft"
+          className="rounded-field border border-line p-1.5 hover:bg-line-soft"
           title="الشهر التالي"
         >
           <ChevronLeft size={16} />
@@ -70,13 +70,13 @@ export default function CalendarPage() {
             const d = new Date();
             setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
           }}
-          className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold hover:bg-line-soft"
+          className="rounded-field border border-line px-3 py-1.5 text-sm font-semibold hover:bg-line-soft"
         >
           اليوم
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-white">
+      <div className="overflow-x-auto rounded-card border border-line bg-surface">
         <div className="min-w-[760px]">
           <div className="grid grid-cols-7 border-b border-line bg-line-soft/60">
             {DAY_NAMES.map((d) => (
@@ -101,8 +101,8 @@ export default function CalendarPage() {
                   >
                     <div
                       className={clsx(
-                        "mb-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-xs tabular-nums",
-                        isToday ? "bg-accent font-bold text-white" : "text-ink-3",
+                        "mb-1 inline-flex h-6 w-6 items-center justify-center rounded-chip text-xs tabular-nums",
+                        isToday ? "bg-accent font-bold text-paper" : "text-ink-3",
                       )}
                     >
                       {day.getDate()}
@@ -117,7 +117,7 @@ export default function CalendarPage() {
                             onClick={() => setOpenId(t.id)}
                             title={t.title}
                             className={clsx(
-                              "block w-full truncate rounded px-1.5 py-0.5 text-right text-[11px] font-semibold text-white",
+                              "block w-full truncate rounded px-1.5 py-0.5 text-right text-[11px] font-semibold text-paper",
                               done && "opacity-45 line-through",
                             )}
                             style={{

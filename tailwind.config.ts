@@ -5,20 +5,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: { DEFAULT: "#1c2733", 2: "#4a5866", 3: "#7b8794" },
-        paper: "#f6f7f8",
-        line: { DEFAULT: "#e3e7ea", soft: "#eef1f3" },
-        accent: { DEFAULT: "#1f6fb2", soft: "#e8f1f9", ink: "#155181" },
+        ink: { DEFAULT: "var(--masar-ink)", 2: "var(--masar-ink-2)", 3: "var(--masar-muted)" },
+        paper: "var(--masar-paper)",
+        surface: "var(--masar-surface)",
+        line: { DEFAULT: "var(--masar-line)", soft: "var(--masar-line-soft)" },
+        // الفعل الأساسي حبر؛ soft = خلفية «أنت هنا» الزعفرانية الخفيفة
+        accent: {
+          DEFAULT: "var(--masar-ink)",
+          ink: "var(--masar-ink)",
+          soft: "var(--masar-saffron-soft)",
+        },
+        saffron: "var(--masar-saffron)",
+        success: "var(--masar-success)",
+        wait: "var(--masar-wait)",
+        review: "var(--masar-review)",
+        danger: "var(--masar-danger)",
+      },
+      borderRadius: {
+        chip: "999px",
+        field: "9px",
+        card: "16px",
+        sheet: "20px",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
       },
       fontFamily: {
-        sans: [
-          "-apple-system",
-          "SF Arabic",
-          "Segoe UI",
-          "Noto Sans Arabic",
-          "Tahoma",
-          "sans-serif",
-        ],
+        sans: ["IBM Plex Sans Arabic", "-apple-system", "Segoe UI", "Tahoma", "sans-serif"],
+        display: ["Alexandria", "IBM Plex Sans Arabic", "sans-serif"],
+        latin: ["Space Grotesk", "monospace"],
       },
     },
   },

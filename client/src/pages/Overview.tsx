@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle2, Clock, ListTodo, Sparkles, X } from "lucid
 import type { ApprovalRow, Me, ProjectRow, TaskRow } from "../lib/types";
 import { Avatar, DueBadge, StatusChip } from "../components/bits";
 import TaskSheet from "../components/TaskSheet";
+import { SariLine } from "../components/identity";
 
 interface Overview {
   totals: { open: number; overdue: number; dueToday: number; done7d: number; total: number };
@@ -40,21 +41,21 @@ export default function OverviewPage({ me }: { me: Me }) {
   });
 
   const CARDS = [
-    { label: "مهام مفتوحة", value: t?.open, icon: ListTodo, cls: "text-accent bg-accent-soft" },
-    { label: "متأخرة", value: t?.overdue, icon: AlertTriangle, cls: "text-red-600 bg-red-50" },
-    { label: "تستحق اليوم", value: t?.dueToday, icon: Clock, cls: "text-amber-700 bg-amber-50" },
-    { label: "أُنجز آخر ٧ أيام", value: t?.done7d, icon: CheckCircle2, cls: "text-emerald-700 bg-emerald-50" },
+    { label: "مهام مفتوحة", value: t?.open, icon: ListTodo, cls: "text-saffron bg-accent-soft" },
+    { label: "متأخرة", value: t?.overdue, icon: AlertTriangle, cls: "text-danger bg-danger/10" },
+    { label: "تستحق اليوم", value: t?.dueToday, icon: Clock, cls: "text-wait bg-wait/10" },
+    { label: "أُنجز آخر ٧ أيام", value: t?.done7d, icon: CheckCircle2, cls: "text-success bg-success/10" },
   ];
 
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">أهلًا، {me.name.split(" ")[0]} 👋</h1>
+        <h1 className="text-2xl font-extrabold">أهلًا، {me.name.split(" ")[0]}</h1>
         {canReports && (
           <button
             onClick={() => { setBriefError(null); dailyBrief.mutate(); }}
             disabled={dailyBrief.isPending}
-            className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-field border border-review/30 bg-review/10 px-3 py-1.5 text-sm font-bold text-review hover:bg-review/20 disabled:opacity-50"
           >
             <Sparkles size={15} /> {dailyBrief.isPending ? "يُولّد…" : "الملخص اليومي"}
           </button>
@@ -63,14 +64,14 @@ export default function OverviewPage({ me }: { me: Me }) {
       <p className="mb-6 text-sm text-ink-3">هذه نظرة عامة على غرفة الأخبار الآن</p>
 
       {briefError && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
+        <div className="mb-4 rounded-field border border-wait/30 bg-wait/10 px-4 py-2 text-sm font-semibold text-wait">
           {briefError}
         </div>
       )}
       {brief && (
-        <div className="mb-6 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+        <div className="mb-6 rounded-card border border-review/30 bg-review/10 p-4">
           <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-sm font-bold text-violet-800">
+            <span className="flex items-center gap-1.5 text-sm font-bold text-review">
               <Sparkles size={15} /> ملخص الصباح — بالذكاء الاصطناعي
             </span>
             <button onClick={() => setBrief(null)} className="text-ink-3 hover:text-ink"><X size={15} /></button>
@@ -81,16 +82,16 @@ export default function OverviewPage({ me }: { me: Me }) {
 
       {/* بانتظار اعتمادي */}
       {myApprovals.length > 0 && (
-        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50/70">
-          <h2 className="border-b border-amber-200 px-4 py-2.5 text-sm font-bold text-amber-900">
+        <div className="mb-6 rounded-card border border-wait/40 bg-wait/10">
+          <h2 className="border-b border-wait/30 px-4 py-2.5 text-sm font-bold text-wait">
             بانتظار اعتمادك ({myApprovals.length})
           </h2>
-          <div className="divide-y divide-amber-100">
+          <div className="divide-y divide-wait/20">
             {myApprovals.map((a) => (
               <button
                 key={a.id}
                 onClick={() => a.task && setOpenId(a.task.id)}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-right hover:bg-amber-100/50"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-right hover:bg-wait/10"
               >
                 <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                   {a.task?.title}
@@ -106,8 +107,8 @@ export default function OverviewPage({ me }: { me: Me }) {
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {CARDS.map(({ label, value, icon: Icon, cls }) => (
-          <div key={label} className="rounded-xl border border-line bg-white p-4">
-            <div className={`mb-2 inline-flex rounded-lg p-2 ${cls}`}>
+          <div key={label} className="rounded-card border border-line bg-surface p-4">
+            <div className={`mb-2 inline-flex rounded-field p-2 ${cls}`}>
               <Icon size={18} />
             </div>
             <div className="text-2xl font-extrabold tabular-nums">{value ?? "…"}</div>
@@ -118,9 +119,9 @@ export default function OverviewPage({ me }: { me: Me }) {
 
       {/* توزيع الحالات */}
       {overview && overview.totals.total > 0 && (
-        <div className="mb-6 rounded-xl border border-line bg-white p-4">
+        <div className="mb-6 rounded-card border border-line bg-surface p-4">
           <h2 className="mb-3 text-sm font-bold text-ink-2">توزيع المهام على الحالات</h2>
-          <div className="flex h-4 overflow-hidden rounded-full">
+          <div className="flex h-4 overflow-hidden rounded-chip">
             {overview.byStatus
               .filter((s) => s.count > 0)
               .map((s) => (
@@ -139,7 +140,7 @@ export default function OverviewPage({ me }: { me: Me }) {
               .filter((s) => s.count > 0)
               .map((s) => (
                 <span key={s.id} className="flex items-center gap-1.5 text-xs text-ink-2">
-                  <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
+                  <span className="h-2 w-2 rounded-chip" style={{ background: s.color }} />
                   {s.nameAr} <b className="tabular-nums">{s.count}</b>
                 </span>
               ))}
@@ -150,7 +151,7 @@ export default function OverviewPage({ me }: { me: Me }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <AttentionList
           title="متأخرة — تحتاج تدخلًا"
-          empty="لا مهام متأخرة 👏"
+          empty="لا مهام متأخرة"
           tasks={attention?.overdue ?? []}
           onOpen={setOpenId}
         />
@@ -166,7 +167,7 @@ export default function OverviewPage({ me }: { me: Me }) {
       <div className="mt-6">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-bold text-ink-2">المشاريع النشطة</h2>
-          <Link href="/projects" className="text-xs font-semibold text-accent hover:underline">
+          <Link href="/projects" className="text-xs font-semibold text-saffron hover:underline">
             كل المشاريع ←
           </Link>
         </div>
@@ -177,21 +178,19 @@ export default function OverviewPage({ me }: { me: Me }) {
               <Link
                 key={p.id}
                 href={`/projects/${p.id}`}
-                className="rounded-xl border border-line bg-white p-3 hover:shadow-sm"
+                className="rounded-card border border-line bg-surface p-3 hover:shadow-sm"
               >
                 <div className="mb-2 flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: p.color }} />
+                  <span className="h-2.5 w-2.5 rounded-chip" style={{ background: p.color }} />
                   <span className="flex-1 truncate text-sm font-bold">{p.name}</span>
                   <span className="text-xs tabular-nums text-ink-3">{pct}٪</span>
                 </div>
-                <div className="h-1 overflow-hidden rounded-full bg-line-soft">
-                  <div className="h-full" style={{ width: `${pct}%`, background: p.color }} />
-                </div>
+                <div className="py-0.5"><SariLine progress={pct} color={p.color} /></div>
               </Link>
             );
           })}
           {projects.length === 0 && (
-            <div className="col-span-full rounded-xl border border-dashed border-line py-8 text-center text-sm text-ink-3">
+            <div className="col-span-full rounded-card border border-dashed border-line py-8 text-center text-sm text-ink-3">
               لا مشاريع نشطة
             </div>
           )}
@@ -215,7 +214,7 @@ function AttentionList({
   onOpen: (id: number) => void;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-white">
+    <div className="rounded-card border border-line bg-surface">
       <h2 className="border-b border-line-soft px-4 py-2.5 text-sm font-bold text-ink-2">
         {title} <span className="tabular-nums text-ink-3">({tasks.length})</span>
       </h2>
@@ -231,7 +230,7 @@ function AttentionList({
           >
             {t.project && (
               <span
-                className="h-2 w-2 flex-none rounded-full"
+                className="h-2 w-2 flex-none rounded-chip"
                 style={{ background: t.project.color }}
               />
             )}
