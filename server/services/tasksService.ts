@@ -11,6 +11,7 @@ import {
   type Task,
   type User,
 } from "../../shared/schema";
+import { isTransitionAllowed } from "../../shared/statusRules";
 import { broadcast } from "./events";
 
 export async function logActivity(
@@ -61,23 +62,20 @@ export async function changeStatus(task: Task, toStatusId: number, actor: User) 
   if (!to) throw Object.assign(new Error("الحالة غير موجودة"), { status: 400 });
   if (from.id === to.id) return task;
 
-  const alwaysAllowed = to.category === "closed" || from.category === "closed";
-  if (!alwaysAllowed) {
-    const [allowed] = await db
-      .select()
-      .from(statusTransitions)
-      .where(
-        and(
-          eq(statusTransitions.fromStatusId, from.id),
-          eq(statusTransitions.toStatusId, to.id),
-        ),
-      );
-    if (!allowed)
-      throw Object.assign(
-        new Error(`الانتقال من «${from.nameAr}» إلى «${to.nameAr}» غير مسموح`),
-        { status: 422 },
-      );
-  }
+  const [allowed] = await db
+    .select()
+    .from(statusTransitions)
+    .where(
+      and(
+        eq(statusTransitions.fromStatusId, from.id),
+        eq(statusTransitions.toStatusId, to.id),
+      ),
+    );
+  if (!isTransitionAllowed(from.category, to.category, Boolean(allowed)))
+    throw Object.assign(
+      new Error(`الانتقال من «${from.nameAr}» إلى «${to.nameAr}» غير مسموح`),
+      { status: 422 },
+    );
 
   const done = to.category === "done";
   const [updated] = await db

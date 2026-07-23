@@ -12,7 +12,8 @@
     "start": "NODE_ENV=production tsx server/index.ts",
     "check": "tsc --noEmit",
     "db:push": "drizzle-kit push",
-    "seed": "tsx server/seed.ts"
+    "seed": "tsx server/seed.ts",
+    "test:rules": "tsx scripts/test-status-rules.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

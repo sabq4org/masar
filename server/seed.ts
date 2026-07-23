@@ -58,10 +58,18 @@ const DEPARTMENTS: Array<{ nameAr: string; color: string; sortOrder: number }> =
   { nameAr: "السوشيال ميديا", color: "#8C5A2E", sortOrder: 10 },
 ];
 
-const ADMIN_EMAIL = "sabq4u@gmail.com";
-const ADMIN_PASSWORD = "Masar@2026"; // غيّرها بعد أول دخول
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@masar.local";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 
 async function main() {
+  if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 10) {
+    console.error(
+      "عيّن ADMIN_PASSWORD في .env (١٠ أحرف فأكثر) قبل الزرع.\n" +
+        "مثال: ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='…' npm run seed",
+    );
+    process.exit(1);
+  }
+
   console.log("زرع الحالات…");
   for (const [i, s] of STATUSES.entries()) {
     await db
@@ -103,7 +111,7 @@ async function main() {
       role: "admin",
       avatarColor: "#1F6FB2",
     });
-    console.log(`✔ حساب المدير: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD} (غيّر كلمة المرور بعد الدخول)`);
+    console.log(`✔ حساب المدير: ${ADMIN_EMAIL} (غيّر كلمة المرور بعد أول دخول)`);
   } else {
     console.log("حساب المدير موجود مسبقًا — لم يتغير شيء");
   }

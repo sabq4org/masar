@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { api, queryClient } from "../lib/api";
 import type { DepartmentRow, ProjectRow } from "../lib/types";
 import { SariLine } from "../components/identity";
@@ -19,11 +19,16 @@ export default function Projects() {
   const [name, setName] = useState("");
   const [type, setType] = useState("ops");
   const [departmentId, setDepartmentId] = useState<number | "">("");
+  const [q, setQ] = useState("");
 
   const { data: projectsData } = useQuery<ProjectRow[] | null>({ queryKey: ["/api/projects"] });
   const { data: depsData } = useQuery<DepartmentRow[] | null>({ queryKey: ["/api/departments"] });
-  const projects = Array.isArray(projectsData) ? projectsData : [];
+  const allProjects = Array.isArray(projectsData) ? projectsData : [];
   const departments = Array.isArray(depsData) ? depsData : [];
+  const projects = useMemo(
+    () => (q ? allProjects.filter((p) => p.name.includes(q)) : allProjects),
+    [allProjects, q],
+  );
 
   const create = useMutation({
     mutationFn: () => {
@@ -44,11 +49,21 @@ export default function Projects() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">المشاريع</h1>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <h1 className="flex-1 text-xl font-extrabold">المشاريع</h1>
+        <div className="flex h-9 items-center gap-1.5 rounded-field border border-line bg-surface px-2.5">
+          <Search size={14} className="text-ink-3" />
+          <input
+            id="masar-search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="بحث… (/)"
+            className="w-36 bg-transparent text-sm focus:outline-none"
+          />
+        </div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1.5 rounded-field bg-accent px-4 py-2 text-sm font-bold text-paper hover:opacity-90"
+          className="flex h-9 items-center gap-1.5 rounded-field bg-accent px-3 text-sm font-bold text-paper hover:opacity-90"
         >
           <Plus size={16} /> مشروع جديد
         </button>

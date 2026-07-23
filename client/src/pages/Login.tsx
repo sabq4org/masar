@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api, queryClient } from "../lib/api";
-import { MasarLogo } from "../components/identity";
+import { MasarLogo, SariLine } from "../components/identity";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -23,17 +23,39 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-paper p-4">
+      {/* نسيج ورقي خفيف */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 20%, var(--masar-line-soft) 0 1px, transparent 1px), radial-gradient(circle at 80% 60%, var(--masar-line) 0 1px, transparent 1px)",
+          backgroundSize: "28px 28px, 42px 42px",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-1/4 h-72 w-72 rounded-full bg-saffron/10"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 bottom-1/4 h-64 w-64 rounded-full bg-review/10"
+      />
+
       <form
         onSubmit={submit}
-        className="w-full max-w-sm rounded-sheet border border-line bg-surface p-8 shadow-card"
+        className="relative w-full max-w-sm rounded-sheet border border-line bg-surface p-8 shadow-card"
       >
-        <div className="mb-3 flex justify-center">
+        <div className="mb-4 flex justify-center">
           <MasarLogo size={56} />
         </div>
-        <p className="mb-7 text-center text-sm text-ink-2">
+        <p className="mb-2 text-center font-display text-sm font-semibold text-ink-2">
           من الفكرة إلى النشر… على سطرٍ واحد.
         </p>
+        <div className="mx-auto mb-7 w-40">
+          <SariLine progress={38} />
+        </div>
 
         <label className="mb-1 block text-sm font-bold">البريد الإلكتروني</label>
         <input

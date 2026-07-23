@@ -50,7 +50,7 @@ export default function OverviewPage({ me }: { me: Me }) {
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">أهلًا، {me.name.split(" ")[0]}</h1>
+        <h1 className="text-xl font-extrabold">أهلًا، {me.name.split(" ")[0]}</h1>
         {canReports && (
           <button
             onClick={() => { setBriefError(null); dailyBrief.mutate(); }}
@@ -61,7 +61,7 @@ export default function OverviewPage({ me }: { me: Me }) {
           </button>
         )}
       </div>
-      <p className="mb-6 text-sm text-ink-3">هذه نظرة عامة على غرفة الأخبار الآن</p>
+      <p className="mb-4 text-sm text-ink-3">هذه نظرة عامة على غرفة الأخبار الآن</p>
 
       {briefError && (
         <div className="mb-4 rounded-field border border-wait/30 bg-wait/10 px-4 py-2 text-sm font-semibold text-wait">
@@ -105,14 +105,14 @@ export default function OverviewPage({ me }: { me: Me }) {
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         {CARDS.map(({ label, value, icon: Icon, cls }) => (
-          <div key={label} className="rounded-card border border-line bg-surface p-4">
-            <div className={`mb-2 inline-flex rounded-field p-2 ${cls}`}>
-              <Icon size={18} />
+          <div key={label} className="rounded-field border border-line bg-surface px-3 py-3">
+            <div className={`mb-1.5 inline-flex rounded-field p-1.5 ${cls}`}>
+              <Icon size={15} />
             </div>
-            <div className="text-2xl font-extrabold tabular-nums">{value ?? "…"}</div>
-            <div className="text-sm text-ink-2">{label}</div>
+            <div className="text-xl font-extrabold tabular-nums">{value ?? "…"}</div>
+            <div className="text-xs text-ink-2">{label}</div>
           </div>
         ))}
       </div>

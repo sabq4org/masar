@@ -75,8 +75,17 @@ button, a, input, select, textarea {
   50% { opacity: 0.35; }
 }
 .masar-urgent-dot { animation: masar-pulse 1.6s ease-out infinite; }
+
+/* ورقة التفاصيل — انزلاق من اليسار (نهاية الشاشة في RTL للـ LTR-left panel) */
+@keyframes masar-sheet-in {
+  from { transform: translateX(-12px); opacity: 0.85; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.masar-sheet { animation: masar-sheet-in 200ms ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
   .masar-urgent-dot { animation: none; }
+  .masar-sheet { animation: none; }
   button, a, input, select, textarea { transition: none; }
 }
 

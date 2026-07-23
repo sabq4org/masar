@@ -109,52 +109,52 @@ export default function ProjectBoard({ id }: { id: number }) {
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-3">
-        <Link href="/projects" className="text-ink-3 hover:text-saffron"><ArrowRight size={20} /></Link>
-        <span className="h-3.5 w-3.5 rounded-chip" style={{ background: project?.color }} />
-        <h1 className="flex-1 text-2xl font-extrabold">{project?.name ?? "…"}</h1>
+      <div className="mb-2 flex items-center gap-2.5">
+        <Link href="/projects" className="text-ink-3 hover:text-saffron"><ArrowRight size={18} /></Link>
+        <span className="h-3 w-3 rounded-chip" style={{ background: project?.color }} />
+        <h1 className="flex-1 truncate text-xl font-extrabold">{project?.name ?? "…"}</h1>
         {canManage && (
           <button
             onClick={() => {
               const name = prompt("اسم القالب:", `قالب — ${project?.name ?? ""}`);
               if (name?.trim()) saveTemplate.mutate(name.trim());
             }}
-            className="flex items-center gap-1.5 rounded-field border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-line-soft"
+            className="flex items-center gap-1.5 rounded-field border border-line px-2.5 py-1 text-xs font-semibold text-ink-2 hover:bg-line-soft"
           >
-            <BookmarkPlus size={15} /> حفظ كقالب
+            <BookmarkPlus size={14} /> حفظ كقالب
           </button>
         )}
       </div>
 
-      {/* شريط العروض والفلاتر */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex rounded-field border border-line bg-surface p-0.5">
           {VIEWS.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setView(key)}
               className={clsx(
-                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold",
+                "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold",
                 view === key ? "bg-accent-soft text-ink" : "text-ink-3 hover:text-ink",
               )}
             >
-              <Icon size={15} /> {label}
+              <Icon size={14} /> {label}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1.5 rounded-field border border-line bg-surface px-2.5 py-1.5">
-          <Search size={14} className="text-ink-3" />
+        <div className="flex h-8 items-center gap-1.5 rounded-field border border-line bg-surface px-2.5">
+          <Search size={13} className="text-ink-3" />
           <input
+            id="masar-search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="بحث…"
-            className="w-32 bg-transparent text-sm focus:outline-none"
+            placeholder="بحث… (/)"
+            className="w-28 bg-transparent text-sm focus:outline-none"
           />
         </div>
         <select
           value={filterAssignee}
           onChange={(e) => setFilterAssignee(e.target.value ? Number(e.target.value) : "")}
-          className="rounded-field border border-line bg-surface px-2.5 py-1.5 text-sm"
+          className="h-8 rounded-field border border-line bg-surface px-2 text-xs"
         >
           <option value="">كل المسؤولين</option>
           {users.map((u) => (
@@ -164,7 +164,7 @@ export default function ProjectBoard({ id }: { id: number }) {
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className="rounded-field border border-line bg-surface px-2.5 py-1.5 text-sm"
+          className="h-8 rounded-field border border-line bg-surface px-2 text-xs"
         >
           <option value="">كل الأولويات</option>
           <option value="urgent">عاجلة</option>
@@ -194,7 +194,7 @@ export default function ProjectBoard({ id }: { id: number }) {
           onDragStart={(e) => setDragTask(tasks.find((t) => t.id === Number(e.active.id)) ?? null)}
           onDragEnd={onDragEnd}
         >
-          <div className="flex gap-3 overflow-x-auto pb-4">
+          <div className="flex gap-2 overflow-x-auto pb-4">
             {statuses.map((s) => (
               <Column
                 key={s.id}
@@ -217,24 +217,24 @@ export default function ProjectBoard({ id }: { id: number }) {
       )}
 
       {view === "list" && (
-        <div className="overflow-x-auto rounded-card border border-line bg-surface">
+        <div className="overflow-x-auto rounded-field border border-line bg-surface">
           <table className="w-full min-w-[700px] text-sm">
             <thead>
-              <tr className="border-b border-line bg-line-soft/60 text-right text-xs text-ink-2">
-                <th className="px-4 py-2.5 font-bold">المهمة</th>
-                <th className="px-4 py-2.5 font-bold">الحالة</th>
-                <th className="px-4 py-2.5 font-bold">الأولوية</th>
-                <th className="px-4 py-2.5 font-bold">المسؤول</th>
-                <th className="px-4 py-2.5 font-bold">الاستحقاق</th>
+              <tr className="border-b border-line bg-paper text-right text-[11px] text-ink-2">
+                <th className="px-3 py-2 font-bold">المهمة</th>
+                <th className="px-3 py-2 font-bold">الحالة</th>
+                <th className="px-3 py-2 font-bold">الأولوية</th>
+                <th className="px-3 py-2 font-bold">المسؤول</th>
+                <th className="px-3 py-2 font-bold">الاستحقاق</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line-soft">
               {tasks.map((t) => (
-                <tr key={t.id} onClick={() => setOpenId(t.id)} className="cursor-pointer hover:bg-line-soft/50">
-                  <td className="px-4 py-2.5 font-semibold">{t.title}</td>
-                  <td className="px-4 py-2.5"><StatusChip status={t.status} /></td>
-                  <td className="px-4 py-2.5"><PriorityChip priority={t.priority} /></td>
-                  <td className="px-4 py-2.5">
+                <tr key={t.id} onClick={() => setOpenId(t.id)} className="h-10 cursor-pointer hover:bg-line-soft/50">
+                  <td className="px-3 py-1.5 font-semibold">{t.title}</td>
+                  <td className="px-3 py-1.5"><StatusChip status={t.status} /></td>
+                  <td className="px-3 py-1.5"><PriorityChip priority={t.priority} /></td>
+                  <td className="px-3 py-1.5">
                     {t.assignee ? (
                       <span className="flex items-center gap-1.5">
                         <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={6} />
@@ -244,11 +244,11 @@ export default function ProjectBoard({ id }: { id: number }) {
                       <span className="text-xs text-ink-3">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5"><DueBadge task={t} /></td>
+                  <td className="px-3 py-1.5"><DueBadge task={t} /></td>
                 </tr>
               ))}
               {tasks.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-3">لا مهام مطابقة</td></tr>
+                <tr><td colSpan={5} className="px-3 py-8 text-center text-ink-3">لا مهام مطابقة</td></tr>
               )}
             </tbody>
           </table>
@@ -279,29 +279,29 @@ function Column({
     <div
       ref={setNodeRef}
       className={clsx(
-        "flex w-64 flex-none flex-col rounded-card border bg-surface/70 p-2",
-        isOver ? "border-accent bg-accent-soft/60" : "border-line",
+        "flex w-60 flex-none flex-col rounded-field border bg-paper p-1.5",
+        isOver ? "border-saffron bg-accent-soft/50" : "border-line",
       )}
     >
-      <div className="mb-2 flex items-center gap-2 px-1.5 py-1">
-        <span className="h-2 w-2 rounded-chip" style={{ background: status.color }} />
-        <span className="flex-1 text-sm font-bold" style={{ color: status.color }}>{status.nameAr}</span>
-        <span className="text-xs tabular-nums text-ink-3">{tasks.length}</span>
-        <button onClick={onStartAdd} className="text-ink-3 hover:text-saffron" title="إضافة"><Plus size={15} /></button>
+      <div className="mb-1.5 flex items-center gap-1.5 px-1.5 py-1">
+        <span className="h-1.5 w-1.5 rounded-chip" style={{ background: status.color }} />
+        <span className="flex-1 text-xs font-bold" style={{ color: status.color }}>{status.nameAr}</span>
+        <span className="text-[11px] tabular-nums text-ink-3">{tasks.length}</span>
+        <button onClick={onStartAdd} className="text-ink-3 hover:text-saffron" title="إضافة"><Plus size={14} /></button>
       </div>
       {adding && (
-        <form onSubmit={(e) => { e.preventDefault(); onSubmitAdd(); }} className="mb-2">
+        <form onSubmit={(e) => { e.preventDefault(); onSubmitAdd(); }} className="mb-1.5">
           <input
             autoFocus
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onBlur={onSubmitAdd}
             placeholder="عنوان المهمة…"
-            className="w-full rounded-field border border-accent px-2 py-1.5 text-sm focus:outline-none"
+            className="w-full rounded-field border border-accent bg-surface px-2 py-1 text-sm focus:outline-none"
           />
         </form>
       )}
-      <div className="flex min-h-16 flex-col gap-2">
+      <div className="flex min-h-12 flex-col gap-1.5">
         {tasks.map((t) => (
           <DraggableCard key={t.id} task={t} onOpen={onOpen} />
         ))}
@@ -329,15 +329,15 @@ function Card({ task, overlay }: { task: TaskRow; overlay?: boolean }) {
   return (
     <div
       className={clsx(
-        "cursor-grab rounded-field border border-line bg-surface p-2.5 text-right shadow-sm",
-        overlay && "rotate-2 shadow-lg",
-        task.priority === "urgent" && "border-r-4 border-r-saffron",
+        "cursor-grab rounded-[9px] border border-line bg-surface px-2.5 py-2 text-right",
+        overlay && "rotate-1 ring-1 ring-saffron/40",
+        task.priority === "urgent" && "border-r-[3px] border-r-saffron",
       )}
     >
-      <div className="mb-1.5 text-sm font-semibold leading-snug">{task.title}</div>
-      <div className="flex items-center justify-between gap-2">
+      <div className="mb-1 line-clamp-2 text-[13px] font-semibold leading-snug">{task.title}</div>
+      <div className="flex items-center justify-between gap-1.5">
         <PriorityChip priority={task.priority} />
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1">
           <DueBadge task={task} />
           {task.assignee && (
             <Avatar name={task.assignee.name} color={task.assignee.avatarColor} size={6} />
