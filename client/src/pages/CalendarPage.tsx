@@ -47,9 +47,9 @@ export default function CalendarPage() {
   const today = new Date().toDateString();
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="mb-4 flex items-center gap-3">
-        <h1 className="flex-1 text-2xl font-extrabold">التقويم</h1>
+    <div className="mx-auto w-full max-w-6xl xl:max-w-7xl">
+      <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-4 sm:gap-3">
+        <h1 className="flex-1 text-xl font-extrabold sm:text-2xl">التقويم</h1>
         <button
           onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
           className="rounded-field border border-line p-1.5 hover:bg-line-soft"
@@ -77,10 +77,10 @@ export default function CalendarPage() {
       </div>
 
       <div className="overflow-x-auto rounded-card border border-line bg-surface">
-        <div className="min-w-[760px]">
+        <div className="min-w-[640px] sm:min-w-[760px]">
           <div className="grid grid-cols-7 border-b border-line bg-line-soft/60">
             {DAY_NAMES.map((d) => (
-              <div key={d} className="px-2 py-2 text-center text-xs font-bold text-ink-2">
+              <div key={d} className="px-1 py-2 text-center text-[10px] font-bold text-ink-2 sm:px-2 sm:text-xs">
                 {d}
               </div>
             ))}
@@ -95,7 +95,7 @@ export default function CalendarPage() {
                   <div
                     key={day.toISOString()}
                     className={clsx(
-                      "min-h-24 border-l border-line-soft p-1.5 last:border-l-0",
+                      "min-h-16 border-l border-line-soft p-1 last:border-l-0 sm:min-h-24 sm:p-1.5",
                       !inMonth && "bg-line-soft/40",
                     )}
                   >

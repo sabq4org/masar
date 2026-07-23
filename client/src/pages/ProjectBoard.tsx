@@ -141,20 +141,20 @@ export default function ProjectBoard({ id }: { id: number }) {
             </button>
           ))}
         </div>
-        <div className="flex h-8 items-center gap-1.5 rounded-field border border-line bg-surface px-2.5">
+        <div className="flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-field border border-line bg-surface px-2.5 sm:flex-none">
           <Search size={13} className="text-ink-3" />
           <input
             id="masar-search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="بحث… (/)"
-            className="w-28 bg-transparent text-sm focus:outline-none"
+            placeholder="بحث…"
+            className="w-full min-w-0 bg-transparent text-sm focus:outline-none sm:w-28"
           />
         </div>
         <select
           value={filterAssignee}
           onChange={(e) => setFilterAssignee(e.target.value ? Number(e.target.value) : "")}
-          className="h-8 rounded-field border border-line bg-surface px-2 text-xs"
+          className="hidden h-8 rounded-field border border-line bg-surface px-2 text-xs sm:block"
         >
           <option value="">كل المسؤولين</option>
           {users.map((u) => (
@@ -164,7 +164,7 @@ export default function ProjectBoard({ id }: { id: number }) {
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className="h-8 rounded-field border border-line bg-surface px-2 text-xs"
+          className="hidden h-8 rounded-field border border-line bg-surface px-2 text-xs sm:block"
         >
           <option value="">كل الأولويات</option>
           <option value="urgent">عاجلة</option>
@@ -279,7 +279,7 @@ function Column({
     <div
       ref={setNodeRef}
       className={clsx(
-        "flex w-60 flex-none flex-col rounded-field border bg-paper p-1.5",
+        "flex w-[min(15rem,78vw)] flex-none flex-col rounded-field border bg-paper p-1.5 sm:w-60",
         isOver ? "border-saffron bg-accent-soft/50" : "border-line",
       )}
     >

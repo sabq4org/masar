@@ -48,7 +48,7 @@ export default function OverviewPage({ me }: { me: Me }) {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto w-full max-w-6xl xl:max-w-7xl">
       <div className="mb-1 flex items-center justify-between">
         <h1 className="text-xl font-extrabold">أهلًا، {me.name.split(" ")[0]}</h1>
         {canReports && (
@@ -171,7 +171,7 @@ export default function OverviewPage({ me }: { me: Me }) {
             كل المشاريع ←
           </Link>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {projects.map((p) => {
             const pct = p.taskCount ? Math.round(((p.doneCount ?? 0) / p.taskCount) * 100) : 0;
             return (
@@ -235,9 +235,15 @@ function AttentionList({
               />
             )}
             <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t.title}</span>
-            <StatusChip status={t.status} />
+            <span className="hidden sm:inline-flex">
+              <StatusChip status={t.status} />
+            </span>
             <DueBadge task={t} />
-            {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={6} />}
+            {t.assignee && (
+              <span className="hidden sm:inline-flex">
+                <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={6} />
+              </span>
+            )}
           </button>
         ))}
       </div>

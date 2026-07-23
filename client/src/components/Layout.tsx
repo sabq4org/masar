@@ -19,6 +19,7 @@ import {
   PanelRightOpen,
   Menu,
   X,
+  MoreHorizontal,
 } from "lucide-react";
 import clsx from "clsx";
 import type { Me } from "../lib/types";
@@ -40,6 +41,14 @@ const NAV = [
 const ADMIN_NAV = [
   { href: "/users", label: "المستخدمون", icon: UserCog, perm: "users.manage" },
   { href: "/settings", label: "سير العمل", icon: SlidersHorizontal, perm: "workflow.manage" },
+];
+
+/** التبويبات الظاهرة في الشريط السفلي (شاشة ضيقة) */
+const BOTTOM_NAV = [
+  { href: "/", label: "عامة", icon: LayoutDashboard },
+  { href: "/my", label: "مهامي", icon: ListTodo },
+  { href: "/projects", label: "مشاريع", icon: FolderKanban },
+  { href: "/inbox", label: "وارد", icon: Bell },
 ];
 
 function isTypingTarget(el: EventTarget | null) {
@@ -174,13 +183,16 @@ export default function Layout({ me, children }: { me: Me; children: React.React
 
   const adminItems = ADMIN_NAV.filter((i) => can(i.perm));
   const navItems = NAV.filter((i) => can(i.perm));
+  const moreActive =
+    !BOTTOM_NAV.some((i) => (i.href === "/" ? location === "/" : location.startsWith(i.href))) &&
+    location !== "/";
 
   const sidebarInner = (compact: boolean, onNavigate?: () => void) => (
     <>
       <div
         className={clsx(
           "flex items-center border-b border-line",
-          compact ? "justify-center px-2 py-4" : "justify-between px-4 py-4",
+          compact ? "justify-center px-2 py-4" : "justify-between gap-2 px-4 py-4",
         )}
       >
         {compact ? (
@@ -275,8 +287,8 @@ export default function Layout({ me, children }: { me: Me; children: React.React
   );
 
   return (
-    <div className="flex min-h-screen">
-      {/* ديسكتوب */}
+    <div className="flex min-h-dvh overflow-x-hidden">
+      {/* شاشة عريضة: شريط جانبي */}
       <aside
         className={clsx(
           "fixed inset-y-0 right-0 z-30 hidden flex-col border-l border-line bg-surface lg:flex",
@@ -286,8 +298,8 @@ export default function Layout({ me, children }: { me: Me; children: React.React
         {sidebarInner(collapsed)}
       </aside>
 
-      {/* موبايل: زر فتح */}
-      <header className="fixed inset-x-0 top-0 z-30 flex h-12 items-center gap-3 border-b border-line bg-surface px-3 lg:hidden">
+      {/* شاشة ضيقة: رأس */}
+      <header className="masar-safe-top fixed inset-x-0 top-0 z-30 flex h-12 items-center gap-3 border-b border-line bg-surface px-3 lg:hidden">
         <button
           onClick={() => setMobileOpen(true)}
           className="text-ink-2 hover:text-saffron"
@@ -296,19 +308,28 @@ export default function Layout({ me, children }: { me: Me; children: React.React
           <Menu size={20} />
         </button>
         <MasarLogo size={22} />
+        <div className="flex-1" />
+        {(notif?.unread ?? 0) > 0 && (
+          <Link
+            href="/inbox"
+            className="rounded-chip bg-saffron px-2 py-0.5 text-xs font-bold text-paper tabular-nums"
+          >
+            {notif!.unread}
+          </Link>
+        )}
       </header>
 
-      {/* موبايل: درج */}
+      {/* درج القائمة الكاملة (ضيقة) */}
       {mobileOpen && (
         <>
           <div
             className="fixed inset-0 z-40 bg-ink/30 lg:hidden"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="fixed inset-y-0 right-0 z-50 flex w-64 flex-col border-l border-line bg-surface lg:hidden">
+          <aside className="fixed inset-y-0 right-0 z-50 flex w-[min(18rem,88vw)] flex-col border-l border-line bg-surface lg:hidden">
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute left-3 top-4 text-ink-3 hover:text-ink"
+              className="absolute left-3 top-4 z-10 text-ink-3 hover:text-ink"
               aria-label="إغلاق"
             >
               <X size={18} />
@@ -318,13 +339,51 @@ export default function Layout({ me, children }: { me: Me; children: React.React
         </>
       )}
 
+      {/* شاشة ضيقة: شريط سفلي */}
+      <nav className="masar-safe-bottom fixed inset-x-0 bottom-0 z-30 flex h-14 items-stretch border-t border-line bg-surface lg:hidden">
+        {BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
+          const active = href === "/" ? location === "/" : location.startsWith(href);
+          const badge = href === "/inbox" ? (notif?.unread ?? 0) : 0;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={clsx(
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-bold",
+                active ? "text-saffron" : "text-ink-3",
+              )}
+            >
+              <Icon size={20} strokeWidth={active ? 2.2 : 1.8} />
+              <span>{label}</span>
+              {badge > 0 && (
+                <span className="absolute left-1/2 top-1 h-1.5 w-1.5 -translate-x-3 rounded-chip bg-saffron" />
+              )}
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => setMobileOpen(true)}
+          className={clsx(
+            "flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-bold",
+            moreActive ? "text-saffron" : "text-ink-3",
+          )}
+        >
+          <MoreHorizontal size={20} strokeWidth={moreActive ? 2.2 : 1.8} />
+          <span>المزيد</span>
+        </button>
+      </nav>
+
       <main
         className={clsx(
-          "min-w-0 flex-1 p-4 pt-16 lg:p-5 lg:pt-5",
+          "min-w-0 flex-1 overflow-x-hidden",
+          "px-3 pb-[4.75rem] pt-14",
+          "sm:px-4",
+          "lg:px-6 lg:pb-6 lg:pt-5",
+          "xl:px-8",
           collapsed ? "lg:mr-14" : "lg:mr-56",
         )}
       >
-        {children}
+        <div className="mx-auto w-full max-w-[1600px]">{children}</div>
       </main>
     </div>
   );

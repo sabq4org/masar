@@ -134,8 +134,8 @@ export default function TaskSheet({ taskId, onClose }: { taskId: number; onClose
   return (
     <>
       <div className="fixed inset-0 z-40 bg-ink/25" onClick={onClose} />
-      <aside className="masar-sheet fixed inset-y-0 left-0 z-50 flex w-full max-w-lg flex-col border-r border-line bg-surface">
-        <header className="flex items-start gap-3 border-b border-line px-4 py-3">
+      <aside className="masar-sheet masar-safe-top masar-safe-bottom fixed inset-y-0 left-0 z-50 flex w-full flex-col border-r border-line bg-surface sm:max-w-lg xl:max-w-xl">
+        <header className="flex items-start gap-3 border-b border-line px-3 py-3 sm:px-4">
           <div className="flex-1 min-w-0">
             <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
               <StatusChip status={task.status} />

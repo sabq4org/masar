@@ -48,7 +48,7 @@ export default function Projects() {
   });
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto w-full max-w-5xl xl:max-w-7xl">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <h1 className="flex-1 text-xl font-extrabold">المشاريع</h1>
         <div className="flex h-9 items-center gap-1.5 rounded-field border border-line bg-surface px-2.5">
@@ -123,7 +123,7 @@ export default function Projects() {
         </form>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {projects.map((p) => {
           const pct = p.taskCount ? Math.round(((p.doneCount ?? 0) / p.taskCount) * 100) : 0;
           return (

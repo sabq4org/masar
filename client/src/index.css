@@ -91,3 +91,10 @@ button, a, input, select, textarea {
 
 ::-webkit-scrollbar { height: 8px; width: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--masar-line); border-radius: 999px; }
+
+/* مناطق آمنة للجوال (النوتش / الشريط السفلي) */
+.masar-safe-top { padding-top: env(safe-area-inset-top, 0); }
+.masar-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+/* منع تمدّد أفقي على الشاشات الضيقة */
+html, body, #root { max-width: 100%; overflow-x: hidden; }

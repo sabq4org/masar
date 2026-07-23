@@ -16,9 +16,9 @@ export default function Reports() {
   const maxUser = Math.max(1, ...data.byUser.map((u) => u.open));
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">التقارير</h1>
+    <div className="mx-auto w-full max-w-5xl xl:max-w-7xl">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-extrabold sm:text-2xl">التقارير</h1>
         <a
           href="/api/tasks/export.csv"
           download
@@ -31,7 +31,7 @@ export default function Reports() {
         الأرقام مؤشرات سياقية وليست تقييمًا للأفراد — تُقرأ مع نوع المهام وتعقيدها
       </p>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-5">
         {[
           ["إجمالي المهام", data.totals.total, "text-ink"],
           ["مفتوحة", data.totals.open, "text-accent"],

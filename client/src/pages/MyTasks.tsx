@@ -48,10 +48,10 @@ export default function MyTasks() {
   }, [tasks]);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl xl:max-w-4xl">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <h1 className="text-xl font-extrabold">مهامي</h1>
-        <span className="text-[11px] font-semibold text-ink-3">
+        <span className="hidden text-[11px] font-semibold text-ink-3 lg:inline">
           N مهمة جديدة · Esc إغلاق
         </span>
       </div>
@@ -68,8 +68,8 @@ export default function MyTasks() {
           id="masar-quick-add"
           value={quickTitle}
           onChange={(e) => setQuickTitle(e.target.value)}
-          placeholder="إضافة مهمة سريعة… (Enter)"
-          className="flex-1 bg-transparent text-sm focus:outline-none"
+          placeholder="إضافة مهمة سريعة…"
+          className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
         />
       </form>
 
@@ -90,7 +90,7 @@ export default function MyTasks() {
                 <button
                   key={t.id}
                   onClick={() => setOpenId(t.id)}
-                  className="flex h-10 w-full items-center gap-2.5 px-3 text-right text-sm hover:bg-line-soft/50"
+                  className="flex min-h-10 w-full items-center gap-2 px-2.5 py-2 text-right text-sm hover:bg-line-soft/50 sm:gap-2.5 sm:px-3"
                 >
                   {t.project && (
                     <span
@@ -100,10 +100,18 @@ export default function MyTasks() {
                     />
                   )}
                   <span className="min-w-0 flex-1 truncate font-semibold">{t.title}</span>
-                  <PriorityChip priority={t.priority} />
-                  <StatusChip status={t.status} />
+                  <span className="hidden sm:inline-flex">
+                    <PriorityChip priority={t.priority} />
+                  </span>
+                  <span className="hidden md:inline-flex">
+                    <StatusChip status={t.status} />
+                  </span>
                   <DueBadge task={t} />
-                  {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={6} />}
+                  {t.assignee && (
+                    <span className="hidden sm:inline-flex">
+                      <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={6} />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
