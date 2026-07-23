@@ -86,23 +86,13 @@ export function registerMetaRoutes(app: Express) {
     requirePermission(PERMISSIONS.USERS_MANAGE),
     async (req, res) => {
       const id = Number(req.params.id);
-      const [memberCount] = await db
-        .select({ n: sql<number>`count(*)` })
-        .from(users)
-        .where(eq(users.departmentId, id));
-      const [taskCount] = await db
-        .select({ n: sql<number>`count(*)` })
-        .from(tasks)
-        .where(eq(tasks.departmentId, id));
-      const [projectCount] = await db
-        .select({ n: sql<number>`count(*)` })
-        .from(projects)
-        .where(eq(projects.departmentId, id));
-      const refs = Number(memberCount.n) + Number(taskCount.n) + Number(projectCount.n);
-      if (refs > 0)
-        return res.status(409).json({
-          error: `لا يمكن حذف الفريق — مرتبط بـ${memberCount.n} عضو و${taskCount.n} مهمة و${projectCount.n} مشروع. انقل هذه البيانات أولًا أو عطّل الفريق`,
-        });
+      const [dep] = await db.select().from(departments).where(eq(departments.id, id));
+      if (!dep) return res.status(404).json({ error: "الفريق غير موجود" });
+
+      // فك الارتباط ثم الحذف — الأعضاء/المهام/المشاريع تبقى بلا فريق
+      await db.update(users).set({ departmentId: null }).where(eq(users.departmentId, id));
+      await db.update(tasks).set({ departmentId: null }).where(eq(tasks.departmentId, id));
+      await db.update(projects).set({ departmentId: null }).where(eq(projects.departmentId, id));
       await db.delete(departments).where(eq(departments.id, id));
       res.json({ ok: true });
     },
