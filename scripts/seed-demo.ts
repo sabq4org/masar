@@ -27,9 +27,9 @@ async function main() {
   if (!admin) throw new Error("شغّل npm run seed أولًا");
 
   const demoUsers = [
-    { email: "sara@masar.local", name: "سارة العتيبي", role: "editor", avatarColor: "#2E7D5B" },
-    { email: "fahad@masar.local", name: "فهد القحطاني", role: "media", avatarColor: "#B0413E" },
-    { email: "noura@masar.local", name: "نورة الشمري", role: "dept_head", avatarColor: "#33658A" },
+    { email: "sara@masar.local", name: "سارة العتيبي", role: "member", avatarColor: "#2E7D5B" },
+    { email: "fahad@masar.local", name: "فهد القحطاني", role: "specialist", avatarColor: "#B0413E" },
+    { email: "noura@masar.local", name: "نورة الشمري", role: "ops_manager", avatarColor: "#33658A" },
   ];
   const hash = await bcrypt.hash("demo12345", 10);
   const created: number[] = [admin.id];

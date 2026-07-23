@@ -17,16 +17,34 @@ interface AdminUser {
   isActive: boolean;
 }
 
+interface RoleOpt {
+  value: string;
+  label: string;
+}
+
+interface RolesPayload {
+  roles: RoleOpt[];
+  groups: { label: string; roles: RoleOpt[] }[];
+}
+
 export default function UsersAdmin() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "editor", departmentId: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "member", departmentId: "" });
   const [error, setError] = useState<string | null>(null);
 
   const { data: usersData } = useQuery<AdminUser[] | null>({ queryKey: ["/api/admin/users"] });
-  const { data: rolesData } = useQuery<{ value: string; label: string }[] | null>({ queryKey: ["/api/roles"] });
+  const { data: rolesData } = useQuery<RolesPayload | RoleOpt[] | null>({ queryKey: ["/api/roles"] });
   const { data: depsData } = useQuery<DepartmentRow[] | null>({ queryKey: ["/api/departments"] });
   const users = Array.isArray(usersData) ? usersData : [];
-  const roles = Array.isArray(rolesData) ? rolesData : [];
+  const roleGroups =
+    rolesData && !Array.isArray(rolesData) && Array.isArray(rolesData.groups)
+      ? rolesData.groups
+      : null;
+  const rolesFlat = Array.isArray(rolesData)
+    ? rolesData
+    : rolesData && Array.isArray(rolesData.roles)
+      ? rolesData.roles
+      : [];
   const departments = Array.isArray(depsData) ? depsData : [];
 
   function invalidate() {
@@ -42,7 +60,7 @@ export default function UsersAdmin() {
       }),
     onSuccess: () => {
       setShowForm(false);
-      setForm({ name: "", email: "", password: "", role: "editor", departmentId: "" });
+      setForm({ name: "", email: "", password: "", role: "member", departmentId: "" });
       setError(null);
       invalidate();
     },
@@ -96,15 +114,13 @@ export default function UsersAdmin() {
           <Input label="كلمة المرور (٨+ أحرف)" type="password" dir="ltr" value={form.password} onChange={(v) => setForm({ ...form, password: v })} />
           <div>
             <label className="mb-1 block text-xs font-bold text-ink-2">الدور</label>
-            <select
+            <RoleSelect
               value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
+              onChange={(v) => setForm({ ...form, role: v })}
+              groups={roleGroups}
+              flat={rolesFlat}
               className="w-full rounded-field border border-line px-3 py-2 text-sm"
-            >
-              {roles.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-bold text-ink-2">الفريق</label>
@@ -154,15 +170,13 @@ export default function UsersAdmin() {
                   </div>
                 </td>
                 <td className="px-4 py-2.5">
-                  <select
+                  <RoleSelect
                     value={u.role}
-                    onChange={(e) => update.mutate({ id: u.id, patch: { role: e.target.value } })}
+                    onChange={(v) => update.mutate({ id: u.id, patch: { role: v } })}
+                    groups={roleGroups}
+                    flat={rolesFlat}
                     className="rounded-field border border-line px-2 py-1 text-xs"
-                  >
-                    {roles.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
+                  />
                 </td>
                 <td className="px-4 py-2.5">
                   <select
@@ -207,6 +221,40 @@ export default function UsersAdmin() {
         </table>
       </div>
     </div>
+  );
+}
+
+function RoleSelect({
+  value,
+  onChange,
+  groups,
+  flat,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  groups: { label: string; roles: RoleOpt[] }[] | null;
+  flat: RoleOpt[];
+  className?: string;
+}) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className={className}>
+      {groups
+        ? groups.map((g) => (
+            <optgroup key={g.label} label={g.label}>
+              {g.roles.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </optgroup>
+          ))
+        : flat.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+    </select>
   );
 }
 
