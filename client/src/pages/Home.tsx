@@ -122,7 +122,7 @@ export default function Home({ me }: { me: Me }) {
                   {t.title}
                 </span>
                 <CollaboratorStack
-                  people={(t.watchers ?? []).map((w) => w.user)}
+                  people={(t.watchers ?? []).map((w: NonNullable<TaskRow["watchers"]>[number]) => w.user)}
                   max={3}
                   size={5}
                 />
