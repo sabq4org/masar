@@ -569,22 +569,14 @@ export default function TaskPane() {
             </div>
           )}
 
-          {/* ─── المتعاونون (بدون المسؤول — يظهر أصلًا في حقل المسؤول) ─── */}
+          {/* ─── المتعاونون ─── */}
           <div className="mt-4 border-t border-line-soft bg-paper/60 px-6 py-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-ink-2">المتعاونون</span>
               <div className="flex -space-x-1 space-x-reverse">
-                {task.watchers
-                  .filter((w) => w.userId !== task.assigneeId)
-                  .map((w) => (
-                    <Avatar
-                      key={w.userId}
-                      name={w.user.name}
-                      color={w.user.avatarColor}
-                      src={w.user.avatarUrl}
-                      size={6}
-                    />
-                  ))}
+                {task.watchers.map((w) => (
+                  <Avatar key={w.userId} name={w.user.name} color={w.user.avatarColor} src={w.user.avatarUrl} size={6} />
+                ))}
               </div>
               <div className="relative">
                 <button
@@ -596,11 +588,7 @@ export default function TaskPane() {
                 </button>
                 <Popover open={collabOpen} onClose={() => setCollabOpen(false)} className="max-h-64 w-56 overflow-y-auto">
                   {users
-                    .filter(
-                      (u) =>
-                        u.id !== task.assigneeId &&
-                        !task.watchers.some((w) => w.userId === u.id),
-                    )
+                    .filter((u) => !task.watchers.some((w) => w.userId === u.id))
                     .map((u) => (
                       <button
                         key={u.id}
