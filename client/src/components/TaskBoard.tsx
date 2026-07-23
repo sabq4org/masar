@@ -12,7 +12,7 @@ import {
 import clsx from "clsx";
 import { Plus, ThumbsUp } from "lucide-react";
 import type { TaskRow } from "../lib/types";
-import { Avatar, CheckCircle, DueText, MilestoneIcon, PriorityPill } from "./bits";
+import { Avatar, CheckCircle, CollaboratorStack, DueText, MilestoneIcon, PriorityPill } from "./bits";
 import type { ListGroup } from "./TaskList";
 import { useTaskPane } from "../lib/taskPane";
 
@@ -272,6 +272,7 @@ function Card({
           <span className="text-[10px] tabular-nums text-ink-3">{subDone}/{subTotal} فرعية</span>
         )}
         <span className="flex-1" />
+        <CollaboratorStack people={(task.watchers ?? []).map((w) => w.user)} max={3} size={5} />
         {task.assignee && <Avatar name={task.assignee.name} color={task.assignee.avatarColor} src={task.assignee.avatarUrl} size={6} />}
       </div>
     </div>

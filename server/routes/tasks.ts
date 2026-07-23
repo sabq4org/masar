@@ -44,6 +44,11 @@ const taskCard = {
   assignee: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } },
   project: { columns: { id: true, name: true, color: true } },
   section: { columns: { id: true, title: true } },
+  watchers: {
+    columns: { userId: true },
+    with: { user: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } } },
+    limit: 6,
+  },
 } as const;
 
 export function registerTaskRoutes(app: Express) {

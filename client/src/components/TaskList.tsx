@@ -13,7 +13,7 @@ import clsx from "clsx";
 import { ChevronDown, MessageSquare, MoreHorizontal, PanelLeftOpen, Plus, Trash2 } from "lucide-react";
 import type { TaskRow } from "../lib/types";
 import { api } from "../lib/api";
-import { Avatar, CheckCircle, MilestoneIcon, ProjectDot } from "./bits";
+import { Avatar, CheckCircle, CollaboratorStack, MilestoneIcon, ProjectDot } from "./bits";
 import { AssigneePicker, DueDatePicker, Popover, PriorityPicker } from "./pickers";
 import { useTaskPane } from "../lib/taskPane";
 
@@ -386,6 +386,7 @@ function Row({ task, ...props }: Omit<TaskListProps, "tasks"> & { task: TaskRow 
           {subDone}/{subTotal}
         </span>
       )}
+      <CollaboratorStack people={(task.watchers ?? []).map((w) => w.user)} max={3} size={5} />
       {props.showAssignee !== false && (
         <span className="flex w-20 flex-none items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <AssigneePicker
