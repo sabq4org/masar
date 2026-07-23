@@ -188,20 +188,21 @@ export interface TemplateRow {
   createdAt: string;
 }
 
-/** أولويات بأسلوب حقول أسانا الملونة */
-export const PRIORITIES: Record<string, { label: string; bg: string; fg: string }> = {
-  urgent: { label: "عاجلة", bg: "#B0413E22", fg: "#B0413E" },
-  high: { label: "عالية", bg: "#C2701E22", fg: "#C2701E" },
-  normal: { label: "متوسطة", bg: "#A87A0E22", fg: "#8a6a10" },
-  low: { label: "منخفضة", bg: "#33658A1f", fg: "#33658A" },
+/** أولويات بأسلوب حقول أسانا الملونة — التسمية عبر i18n (`priority.*`) */
+export const PRIORITIES: Record<string, { bg: string; fg: string }> = {
+  urgent: { bg: "#B0413E22", fg: "#B0413E" },
+  high: { bg: "#C2701E22", fg: "#C2701E" },
+  normal: { bg: "#A87A0E22", fg: "#8a6a10" },
+  low: { bg: "#33658A1f", fg: "#33658A" },
 };
 
-export const PROJECT_STATUS_META: Record<string, { label: string; color: string }> = {
-  on_track: { label: "على المسار", color: "#2E7D5B" },
-  at_risk: { label: "في خطر", color: "#A87A0E" },
-  off_track: { label: "متعثر", color: "#B0413E" },
-  on_hold: { label: "معلّق", color: "#46536B" },
-  complete: { label: "مكتمل", color: "#33658A" },
+/** حالة المشروع — التسمية عبر i18n (`status.*`) */
+export const PROJECT_STATUS_META: Record<string, { color: string }> = {
+  on_track: { color: "#2E7D5B" },
+  at_risk: { color: "#A87A0E" },
+  off_track: { color: "#B0413E" },
+  on_hold: { color: "#46536B" },
+  complete: { color: "#33658A" },
 };
 
 export const PROJECT_COLORS = [

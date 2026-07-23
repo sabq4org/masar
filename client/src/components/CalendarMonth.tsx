@@ -4,18 +4,29 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { TaskRow } from "../lib/types";
 import { isSameDay, startOfDay } from "../lib/dates";
 import { useTaskPane } from "../lib/taskPane";
+import { useI18n } from "../lib/i18n";
 
-const WEEKDAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 const MS_DAY = 86400_000;
 
 /** تقويم شهري بأسلوب أسانا — المهام على تواريخ استحقاقها */
 export default function CalendarMonth({ tasks }: { tasks: TaskRow[] }) {
+  const { t, locale } = useI18n();
   const pane = useTaskPane();
+  const dateLoc = locale === "en" ? "en-US" : "ar-SA-u-ca-gregory";
   const [anchor, setAnchor] = useState(() => {
     const d = new Date();
     d.setDate(1);
     return startOfDay(d);
   });
+
+  const weekdays = useMemo(() => {
+    const base = new Date(2024, 0, 7);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      return d.toLocaleDateString(dateLoc, { weekday: "long" });
+    });
+  }, [dateLoc]);
 
   const weeks = useMemo(() => {
     const first = new Date(anchor);
@@ -26,7 +37,6 @@ export default function CalendarMonth({ tasks }: { tasks: TaskRow[] }) {
       for (let d = 0; d < 7; d++) row.push(new Date(gridStart.getTime() + (w * 7 + d) * MS_DAY));
       out.push(row);
     }
-    // احذف الأسبوع السادس إن كان كله خارج الشهر
     const last = out[5];
     if (last.every((d) => d.getMonth() !== anchor.getMonth())) out.pop();
     return out;
@@ -34,17 +44,17 @@ export default function CalendarMonth({ tasks }: { tasks: TaskRow[] }) {
 
   const tasksByDay = useMemo(() => {
     const m = new Map<string, TaskRow[]>();
-    for (const t of tasks) {
-      if (!t.dueAt) continue;
-      const k = startOfDay(new Date(t.dueAt)).toISOString();
+    for (const task of tasks) {
+      if (!task.dueAt) continue;
+      const k = startOfDay(new Date(task.dueAt)).toISOString();
       if (!m.has(k)) m.set(k, []);
-      m.get(k)!.push(t);
+      m.get(k)!.push(task);
     }
     return m;
   }, [tasks]);
 
   const today = new Date();
-  const monthLabel = anchor.toLocaleDateString("ar-SA-u-ca-gregory", { month: "long", year: "numeric" });
+  const monthLabel = anchor.toLocaleDateString(dateLoc, { month: "long", year: "numeric" });
 
   function shift(months: number) {
     const d = new Date(anchor);
@@ -55,10 +65,10 @@ export default function CalendarMonth({ tasks }: { tasks: TaskRow[] }) {
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex items-center gap-2 border-b border-line px-3 py-2">
-        <button onClick={() => shift(1)} className="rounded p-1 text-ink-3 hover:text-ink" title="الشهر التالي">
+        <button onClick={() => shift(1)} className="rounded p-1 text-ink-3 hover:text-ink" title={t("calendar.nextMonth")}>
           <ChevronLeft size={16} />
         </button>
-        <button onClick={() => shift(-1)} className="rounded p-1 text-ink-3 hover:text-ink" title="الشهر السابق">
+        <button onClick={() => shift(-1)} className="rounded p-1 text-ink-3 hover:text-ink" title={t("calendar.prevMonth")}>
           <ChevronRight size={16} />
         </button>
         <span className="text-sm font-bold">{monthLabel}</span>
@@ -71,11 +81,11 @@ export default function CalendarMonth({ tasks }: { tasks: TaskRow[] }) {
           }}
           className="rounded-field border border-line px-2.5 py-1 text-xs font-semibold text-ink-2 hover:bg-line-soft"
         >
-          اليوم
+          {t("tasks.today")}
         </button>
       </div>
       <div className="grid grid-cols-7 border-b border-line-soft bg-paper/70 text-center text-[11px] font-bold text-ink-3">
-        {WEEKDAYS.map((d) => (
+        {weekdays.map((d) => (
           <div key={d} className="py-1.5">{d}</div>
         ))}
       </div>
@@ -104,22 +114,24 @@ export default function CalendarMonth({ tasks }: { tasks: TaskRow[] }) {
                   </span>
                 </div>
                 <div className="space-y-0.5">
-                  {list.slice(0, 3).map((t) => (
+                  {list.slice(0, 3).map((task) => (
                     <button
-                      key={t.id}
-                      onClick={() => pane.open(t.id)}
+                      key={task.id}
+                      onClick={() => pane.open(task.id)}
                       className={clsx(
                         "block w-full truncate rounded-md px-1.5 py-0.5 text-right text-[10px] font-bold text-paper hover:opacity-85",
-                        t.isCompleted && "opacity-50",
+                        task.isCompleted && "opacity-50",
                       )}
-                      style={{ background: t.project?.color ?? "var(--masar-ink-2)" }}
-                      title={t.title}
+                      style={{ background: task.project?.color ?? "var(--masar-ink-2)" }}
+                      title={task.title}
                     >
-                      {t.title}
+                      {task.title}
                     </button>
                   ))}
                   {list.length > 3 && (
-                    <div className="px-1 text-[10px] font-semibold text-ink-3">+{list.length - 3} المزيد</div>
+                    <div className="px-1 text-[10px] font-semibold text-ink-3">
+                      {t("calendar.moreTasks", { n: list.length - 3 })}
+                    </div>
                   )}
                 </div>
               </div>

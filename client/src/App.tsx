@@ -1,6 +1,7 @@
 import { Route, Switch, Redirect } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Me } from "./lib/types";
+import { useI18n } from "./lib/i18n";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
@@ -19,12 +20,13 @@ function can(me: Me, perm: string) {
 }
 
 export default function App() {
+  const { t } = useI18n();
   const { data: me, isLoading } = useQuery<Me | null>({ queryKey: ["/api/auth/me"] });
 
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center text-ink-3">
-        جارٍ التحميل…
+        {t("loading")}
       </div>
     );
 

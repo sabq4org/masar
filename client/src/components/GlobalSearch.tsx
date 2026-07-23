@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { Search, X } from "lucide-react";
 import { Avatar, CheckCircle, ProjectDot } from "./bits";
 import { useTaskPane } from "../lib/taskPane";
+import { useI18n } from "../lib/i18n";
 
 interface SearchResults {
   tasks: {
@@ -20,6 +21,7 @@ interface SearchResults {
 
 /** البحث الشامل — نافذة أسانا العلوية */
 export default function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useI18n();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,8 +29,8 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
   const pane = useTaskPane();
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(q.trim()), 200);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebounced(q.trim()), 200);
+    return () => clearTimeout(timer);
   }, [q]);
 
   useEffect(() => {
@@ -70,49 +72,55 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="ابحث في المهام والمشاريع والأشخاص…"
+            placeholder={t("search.placeholder")}
             className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
           />
-          <button onClick={onClose} className="text-ink-3 hover:text-ink" aria-label="إغلاق">
+          <button onClick={onClose} className="text-ink-3 hover:text-ink" aria-label={t("close")}>
             <X size={16} />
           </button>
         </div>
         <div className="max-h-[26rem] overflow-y-auto p-2">
           {!debounced && (
             <div className="px-3 py-6 text-center text-xs text-ink-3">
-              اكتب للبحث… <span className="mx-1 rounded border border-line px-1 font-latin">/</span> يفتح البحث من أي مكان
+              {t("search.empty")}{" "}
+              <span className="mx-1 rounded border border-line px-1 font-latin">/</span>{" "}
+              {t("search.hintSlash")}
             </div>
           )}
-          {empty && <div className="px-3 py-6 text-center text-xs text-ink-3">لا نتائج لـ«{debounced}»</div>}
+          {empty && (
+            <div className="px-3 py-6 text-center text-xs text-ink-3">
+              {t("search.noResultsFor", { q: debounced })}
+            </div>
+          )}
 
           {results.tasks.length > 0 && (
             <>
-              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">المهام</div>
-              {results.tasks.map((t) => (
+              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">{t("search.tasks")}</div>
+              {results.tasks.map((task) => (
                 <div
-                  key={t.id}
+                  key={task.id}
                   role="button"
                   tabIndex={0}
                   onClick={() => {
                     onClose();
-                    pane.open(t.id);
+                    pane.open(task.id);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       onClose();
-                      pane.open(t.id);
+                      pane.open(task.id);
                     }
                   }}
                   className="flex w-full cursor-pointer items-center gap-2 rounded-field px-2 py-1.5 text-right hover:bg-line-soft"
                 >
-                  <CheckCircle checked={t.isCompleted} size={15} />
-                  <span className={clsx("min-w-0 flex-1 truncate text-sm font-semibold", t.isCompleted && "text-ink-3")}>
-                    {t.title}
+                  <CheckCircle checked={task.isCompleted} size={15} />
+                  <span className={clsx("min-w-0 flex-1 truncate text-sm font-semibold", task.isCompleted && "text-ink-3")}>
+                    {task.title}
                   </span>
-                  {t.project && (
+                  {task.project && (
                     <span className="flex flex-none items-center gap-1 text-[11px] text-ink-3">
-                      <ProjectDot color={t.project.color} size={7} />
-                      {t.project.name}
+                      <ProjectDot color={task.project.color} size={7} />
+                      {task.project.name}
                     </span>
                   )}
                 </div>
@@ -122,7 +130,7 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
 
           {results.projects.length > 0 && (
             <>
-              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">المشاريع</div>
+              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">{t("search.projects")}</div>
               {results.projects.map((p) => (
                 <button
                   key={p.id}
@@ -141,7 +149,7 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
 
           {results.users.length > 0 && (
             <>
-              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">الأشخاص</div>
+              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">{t("search.people")}</div>
               {results.users.map((u) => (
                 <button
                   key={u.id}

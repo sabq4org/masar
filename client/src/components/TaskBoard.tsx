@@ -15,6 +15,7 @@ import type { TaskRow } from "../lib/types";
 import { Avatar, CheckCircle, CollaboratorStack, DueText, MilestoneIcon, PriorityPill } from "./bits";
 import type { ListGroup } from "./TaskList";
 import { useTaskPane } from "../lib/taskPane";
+import { useI18n } from "../lib/i18n";
 
 interface TaskBoardProps {
   groups: ListGroup[];
@@ -29,6 +30,7 @@ interface TaskBoardProps {
 
 /** عرض اللوحة — أعمدة الأقسام بأسلوب أسانا */
 export default function TaskBoard(props: TaskBoardProps) {
+  const { t } = useI18n();
   const { groups, tasks, groupOf, orderOf } = props;
   const [dragTask, setDragTask] = useState<TaskRow | null>(null);
   const [addingGroup, setAddingGroup] = useState(false);
@@ -79,7 +81,7 @@ export default function TaskBoard(props: TaskBoardProps) {
     >
       <div className="flex items-start gap-3 overflow-x-auto pb-4">
         {groups.map((g) => (
-          <Column key={String(g.id)} {...props} group={g} columnTasks={byGroup.get(g.id) ?? []} />
+          <Column key={String(g.id)} {...props} t={t} group={g} columnTasks={byGroup.get(g.id) ?? []} />
         ))}
         {props.onAddGroup && (
           <div className="w-64 flex-none">
@@ -101,7 +103,7 @@ export default function TaskBoard(props: TaskBoardProps) {
                     setGroupTitle("");
                     setAddingGroup(false);
                   }}
-                  placeholder="اسم القسم…"
+                  placeholder={t("tasks.sectionName")}
                   className="w-full rounded-field border border-saffron bg-surface px-2.5 py-1.5 text-sm font-bold focus:outline-none"
                 />
               </form>
@@ -110,13 +112,13 @@ export default function TaskBoard(props: TaskBoardProps) {
                 onClick={() => setAddingGroup(true)}
                 className="flex w-full items-center gap-1.5 rounded-field border border-dashed border-line px-3 py-2 text-xs font-bold text-ink-3 hover:border-saffron hover:text-saffron"
               >
-                <Plus size={14} /> إضافة قسم
+                <Plus size={14} /> {t("tasks.addSection")}
               </button>
             )}
           </div>
         )}
       </div>
-      <DragOverlay>{dragTask && <Card task={dragTask} overlay onPatch={() => {}} />}</DragOverlay>
+      <DragOverlay>{dragTask && <Card task={dragTask} overlay onPatch={() => {}} translate={t} />}</DragOverlay>
     </DndContext>
   );
 }
@@ -124,8 +126,13 @@ export default function TaskBoard(props: TaskBoardProps) {
 function Column({
   group,
   columnTasks,
+  t,
   ...props
-}: Omit<TaskBoardProps, "tasks"> & { group: ListGroup; columnTasks: TaskRow[] }) {
+}: Omit<TaskBoardProps, "tasks"> & {
+  group: ListGroup;
+  columnTasks: TaskRow[];
+  t: ReturnType<typeof useI18n>["t"];
+}) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
   const titleRef = useRef("");
@@ -154,7 +161,7 @@ function Column({
       <div className="mb-2 flex items-center gap-1.5 px-1">
         <span className="flex-1 truncate text-sm font-bold">{group.title}</span>
         <span className="text-[11px] tabular-nums text-ink-3">{columnTasks.length}</span>
-        <button onClick={() => setAdding(true)} className="rounded p-0.5 text-ink-3 hover:text-saffron" title="إضافة مهمة">
+        <button onClick={() => setAdding(true)} className="rounded p-0.5 text-ink-3 hover:text-saffron" title={t("tasks.addTaskTitle")}>
           <Plus size={14} />
         </button>
       </div>
@@ -177,21 +184,21 @@ function Column({
                 setAdding(false);
               }
             }}
-            placeholder="اسم المهمة…"
+            placeholder={t("tasks.taskNamePlaceholder")}
             className="w-full rounded-field border border-saffron bg-surface px-2.5 py-1.5 text-sm focus:outline-none"
           />
         </form>
       )}
       <div className="flex flex-col gap-2 overflow-y-auto">
-        {columnTasks.map((t) => (
-          <DraggableCard key={t.id} task={t} onPatch={props.onPatchTask} />
+        {columnTasks.map((task) => (
+          <DraggableCard key={task.id} task={task} onPatch={props.onPatchTask} translate={t} />
         ))}
         {!columnTasks.length && !adding && (
           <button
             onClick={() => setAdding(true)}
             className="rounded-field border border-dashed border-line py-4 text-center text-xs text-ink-3 hover:border-saffron hover:text-saffron"
           >
-            + إضافة مهمة
+            + {t("tasks.addTask")}
           </button>
         )}
       </div>
@@ -202,9 +209,11 @@ function Column({
 function DraggableCard({
   task,
   onPatch,
+  translate,
 }: {
   task: TaskRow;
   onPatch: (id: number, fields: Record<string, unknown>) => void;
+  translate: ReturnType<typeof useI18n>["t"];
 }) {
   const pane = useTaskPane();
   const drag = useDraggable({ id: task.id });
@@ -223,7 +232,7 @@ function DraggableCard({
         drop.isOver && "shadow-[0_-2px_0_var(--masar-saffron)]",
       )}
     >
-      <Card task={task} onPatch={onPatch} />
+      <Card task={task} onPatch={onPatch} translate={translate} />
     </div>
   );
 }
@@ -232,10 +241,12 @@ function Card({
   task,
   overlay,
   onPatch,
+  translate: t,
 }: {
   task: TaskRow;
   overlay?: boolean;
   onPatch: (id: number, fields: Record<string, unknown>) => void;
+  translate: ReturnType<typeof useI18n>["t"];
 }) {
   const subTotal = (task.subtasks ?? []).length;
   const subDone = (task.subtasks ?? []).filter((s) => s.isCompleted).length;
@@ -269,7 +280,7 @@ function Card({
         <PriorityPill priority={task.priority} size="xs" />
         <DueText task={task} />
         {subTotal > 0 && (
-          <span className="text-[10px] tabular-nums text-ink-3">{subDone}/{subTotal} فرعية</span>
+          <span className="text-[10px] tabular-nums text-ink-3">{t("tasks.subtaskCount", { done: subDone, total: subTotal })}</span>
         )}
         <span className="flex-1" />
         <CollaboratorStack people={(task.watchers ?? []).map((w) => w.user)} max={3} size={5} />

@@ -3,6 +3,8 @@ import { Check, Diamond, ThumbsUp } from "lucide-react";
 import type { Priority, TaskRow } from "../lib/types";
 import { PRIORITIES } from "../lib/types";
 import { dueLabel, dueTone } from "../lib/dates";
+import type { MsgKey } from "../locales/en";
+import { useI18n } from "../lib/i18n";
 
 export function Avatar({
   name,
@@ -51,6 +53,7 @@ export function CheckCircle({
   milestone?: boolean;
   className?: string;
 }) {
+  const { t } = useI18n();
   const base = clsx(
     "flex flex-none items-center justify-center border transition-all duration-150",
     milestone ? "rotate-45 rounded-[4px]" : "rounded-chip",
@@ -63,8 +66,8 @@ export function CheckCircle({
   return (
     <button
       type="button"
-      aria-label={checked ? "إلغاء الإكمال" : "إكمال المهمة"}
-      title={checked ? "مكتملة — اضغط للتراجع" : "وضع علامة الإكمال"}
+      aria-label={checked ? t("tasks.incomplete") : t("tasks.complete")}
+      title={checked ? t("tasks.completedUndo") : t("tasks.complete")}
       onClick={(e) => {
         e.stopPropagation();
         onToggle?.(!checked);
@@ -81,6 +84,7 @@ export function CheckCircle({
 
 /** شارة الأولوية — أقراص ملونة بأسلوب حقول أسانا */
 export function PriorityPill({ priority, size = "sm" }: { priority: Priority | null; size?: "sm" | "xs" }) {
+  const { t } = useI18n();
   if (!priority) return null;
   const p = PRIORITIES[priority];
   if (!p) return null;
@@ -92,7 +96,7 @@ export function PriorityPill({ priority, size = "sm" }: { priority: Priority | n
       )}
       style={{ background: p.bg, color: p.fg }}
     >
-      {p.label}
+      {t(`priority.${priority}` as MsgKey)}
     </span>
   );
 }
@@ -183,7 +187,8 @@ export function ErrorBar({ message }: { message: string | null }) {
 }
 
 export function Spinner() {
+  const { t } = useI18n();
   return (
-    <div className="flex items-center justify-center py-16 text-sm text-ink-3">جارٍ التحميل…</div>
+    <div className="flex items-center justify-center py-16 text-sm text-ink-3">{t("loading")}</div>
   );
 }

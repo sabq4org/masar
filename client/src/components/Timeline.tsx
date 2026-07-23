@@ -1,23 +1,26 @@
 import { useMemo } from "react";
 import type { TaskRow } from "../lib/types";
 import { useTaskPane } from "../lib/taskPane";
+import { useI18n } from "../lib/i18n";
 
 const DAY_W = 26;
 const MS_DAY = 86400_000;
 
 /** الجدول الزمني: شريط لكل مهمة من البداية (أو الإنشاء) حتى الاستحقاق */
 export default function Timeline({ tasks }: { tasks: TaskRow[] }) {
+  const { t, locale } = useI18n();
   const pane = useTaskPane();
+  const dateLoc = locale === "en" ? "en-US" : "ar-SA-u-ca-gregory";
   const rows = useMemo(
     () =>
       tasks
-        .filter((t) => t.dueAt)
-        .map((t) => {
-          const due = new Date(t.dueAt!);
-          const start = t.startAt
-            ? new Date(t.startAt)
-            : new Date(Math.min(new Date(t.createdAt).getTime(), due.getTime() - MS_DAY));
-          return { task: t, start, due };
+        .filter((task) => task.dueAt)
+        .map((task) => {
+          const due = new Date(task.dueAt!);
+          const start = task.startAt
+            ? new Date(task.startAt)
+            : new Date(Math.min(new Date(task.createdAt).getTime(), due.getTime() - MS_DAY));
+          return { task, start, due };
         })
         .sort((a, b) => a.start.getTime() - b.start.getTime()),
     [tasks],
@@ -36,7 +39,7 @@ export default function Timeline({ tasks }: { tasks: TaskRow[] }) {
   if (!range)
     return (
       <div className="rounded-card border border-dashed border-line py-12 text-center text-sm text-ink-3">
-        لا مهام بمواعيد استحقاق لعرضها على الجدول الزمني
+        {t("timeline.empty")}
       </div>
     );
 
@@ -52,7 +55,6 @@ export default function Timeline({ tasks }: { tasks: TaskRow[] }) {
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex">
-        {/* عمود العناوين */}
         <div className="w-48 flex-none border-l border-line">
           <div className="h-9 border-b border-line bg-line-soft/60" />
           {rows.map(({ task }) => (
@@ -72,7 +74,6 @@ export default function Timeline({ tasks }: { tasks: TaskRow[] }) {
             </button>
           ))}
         </div>
-        {/* منطقة الأشرطة */}
         <div className="flex-1 overflow-x-auto" dir="ltr">
           <div className="relative" style={{ width }}>
             <div className="flex h-9 border-b border-line bg-line-soft/60">
@@ -82,7 +83,7 @@ export default function Timeline({ tasks }: { tasks: TaskRow[] }) {
                   className="absolute top-0 flex h-9 items-center border-l border-line-soft pl-1 text-[10px] tabular-nums text-ink-3"
                   style={{ left: x(d) }}
                 >
-                  {d.toLocaleDateString("ar-SA-u-ca-gregory", { day: "numeric", month: "short" })}
+                  {d.toLocaleDateString(dateLoc, { day: "numeric", month: "short" })}
                 </div>
               ))}
             </div>
@@ -90,7 +91,7 @@ export default function Timeline({ tasks }: { tasks: TaskRow[] }) {
               <div
                 className="absolute bottom-0 top-9 z-10 w-px bg-danger"
                 style={{ left: todayX }}
-                title="اليوم"
+                title={t("tasks.today")}
               />
             )}
             {rows.map(({ task, start, due }) => {

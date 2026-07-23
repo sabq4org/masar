@@ -4,6 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { api, queryClient } from "../lib/api";
 import type { DepartmentRow, Me, UserLite } from "../lib/types";
 import { Avatar } from "../components/bits";
+import { useI18n, useRoleLabel } from "../lib/i18n";
 
 interface DeptStats {
   id: number;
@@ -21,6 +22,8 @@ const TEAM_COLORS = [
 ];
 
 export default function Teams() {
+  const { t } = useI18n();
+  const roleLabel = useRoleLabel();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(TEAM_COLORS[0]);
@@ -66,13 +69,13 @@ export default function Teams() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">الفرق</h1>
+        <h1 className="text-2xl font-extrabold">{t("teams.title")}</h1>
         {canManage && (
           <button
             onClick={() => setShowForm((v) => !v)}
             className="flex items-center gap-1.5 rounded-field bg-accent px-4 py-2 text-sm font-bold text-paper hover:opacity-90"
           >
-            <Plus size={16} /> فريق جديد
+            <Plus size={16} /> {t("teams.new")}
           </button>
         )}
       </div>
@@ -92,17 +95,17 @@ export default function Teams() {
           className="mb-6 flex flex-wrap items-end gap-3 rounded-card border border-line bg-surface p-4"
         >
           <div className="min-w-56 flex-1">
-            <label className="mb-1 block text-xs font-bold text-ink-2">اسم الفريق</label>
+            <label className="mb-1 block text-xs font-bold text-ink-2">{t("teams.name")}</label>
             <input
               autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="مثال: البودكاست"
+              placeholder={t("teams.namePlaceholder")}
               className="w-full rounded-field border border-line bg-surface px-3 py-2 focus:border-saffron focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold text-ink-2">اللون</label>
+            <label className="mb-1 block text-xs font-bold text-ink-2">{t("teams.color")}</label>
             <div className="flex gap-1.5">
               {TEAM_COLORS.map((c) => (
                 <button
@@ -123,7 +126,7 @@ export default function Teams() {
             disabled={create.isPending || !name.trim()}
             className="rounded-field bg-accent px-5 py-2 font-bold text-paper hover:opacity-90 disabled:opacity-50"
           >
-            إضافة
+            {t("teams.add")}
           </button>
         </form>
       )}
@@ -137,18 +140,13 @@ export default function Teams() {
               <div className="mb-3 flex items-center gap-2">
                 <span className="h-3 w-3 rounded-chip" style={{ background: d.color }} />
                 <h2 className="flex-1 font-bold">{d.nameAr}</h2>
-                <span className="text-xs text-ink-3">{members.length} عضو</span>
+                <span className="text-xs text-ink-3">{t("teams.members", { n: members.length })}</span>
                 {canManage && (
                   <button
                     onClick={() => {
-                      if (
-                        confirm(
-                          `حذف فريق «${d.nameAr}»؟\nسيُفك ارتباط الأعضاء والمهام والمشاريع بهذا الفريق.`,
-                        )
-                      )
-                        remove.mutate(d.id);
+                      if (confirm(t("teams.deleteConfirm", { name: d.nameAr }))) remove.mutate(d.id);
                     }}
-                    title="حذف الفريق"
+                    title={t("teams.deleteTeam")}
                     className="text-ink-3 hover:text-danger"
                   >
                     <Trash2 size={15} strokeWidth={1.8} />
@@ -157,13 +155,13 @@ export default function Teams() {
               </div>
               <div className="mb-3 flex gap-4 text-xs">
                 <span className="text-ink-2">
-                  مفتوحة <b className="tabular-nums">{s?.open ?? 0}</b>
+                  {t("teams.open")} <b className="tabular-nums">{s?.open ?? 0}</b>
                 </span>
                 <span className={s?.overdue ? "font-bold text-danger" : "text-ink-2"}>
-                  متأخرة <b className="tabular-nums">{s?.overdue ?? 0}</b>
+                  {t("teams.overdue")} <b className="tabular-nums">{s?.overdue ?? 0}</b>
                 </span>
                 <span className="text-success">
-                  منجزة <b className="tabular-nums">{s?.done ?? 0}</b>
+                  {t("teams.done")} <b className="tabular-nums">{s?.done ?? 0}</b>
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -174,11 +172,11 @@ export default function Teams() {
                   >
                     <Avatar name={m.name} color={m.avatarColor} src={m.avatarUrl} size={6} />
                     {m.name}
-                    <span className="text-ink-3">· {m.roleLabel}</span>
+                    <span className="text-ink-3">· {roleLabel(m.role)}</span>
                   </span>
                 ))}
                 {members.length === 0 && (
-                  <span className="text-xs text-ink-3">لا أعضاء بعد — أضفهم من «المستخدمون»</span>
+                  <span className="text-xs text-ink-3">{t("teams.noMembersHint")}</span>
                 )}
               </div>
             </div>
@@ -186,7 +184,8 @@ export default function Teams() {
         })}
         {departments.length === 0 && (
           <div className="col-span-full rounded-card border border-dashed border-line py-12 text-center text-ink-3">
-            لا فرق بعد{canManage ? " — أنشئ أول فريق من الزر أعلاه" : ""}
+            {t("teams.empty")}
+            {canManage ? t("teams.emptyHint") : ""}
           </div>
         )}
       </div>

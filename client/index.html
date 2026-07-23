@@ -13,10 +13,16 @@
       rel="stylesheet"
     />
     <script>
-      // تفعيل «حبر الليل» قبل الرسم الأول لتجنب الوميض
+      // تفعيل الثيم واللغة قبل الرسم الأول لتجنب الوميض
       try {
         if (localStorage.getItem("masar-theme") === "night")
           document.documentElement.dataset.theme = "night";
+        var lang = localStorage.getItem("masar-lang");
+        if (lang === "en") {
+          document.documentElement.lang = "en";
+          document.documentElement.dir = "ltr";
+          document.title = "Masar — From idea to delivery";
+        }
       } catch (e) {}
     </script>
   </head>

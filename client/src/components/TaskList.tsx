@@ -16,6 +16,7 @@ import { api } from "../lib/api";
 import { Avatar, CheckCircle, CollaboratorStack, MilestoneIcon, ProjectDot } from "./bits";
 import { AssigneePicker, DueDatePicker, Popover, PriorityPicker } from "./pickers";
 import { useTaskPane } from "../lib/taskPane";
+import { useI18n } from "../lib/i18n";
 
 export interface ListGroup {
   id: number | null;
@@ -42,6 +43,7 @@ interface TaskListProps {
 
 /** عرض القائمة — جدول أسانا بأقسام قابلة للطي وتحرير مباشر وسحب وإفلات */
 export default function TaskList(props: TaskListProps) {
+  const { t } = useI18n();
   const { groups, tasks, groupOf, orderOf } = props;
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [dragTask, setDragTask] = useState<TaskRow | null>(null);
@@ -97,11 +99,11 @@ export default function TaskList(props: TaskListProps) {
       <div className="overflow-hidden rounded-card border border-line bg-surface">
         {/* رأس الأعمدة */}
         <div className="flex h-8 items-center gap-2 border-b border-line bg-paper/70 pl-3 pr-9 text-[11px] font-bold text-ink-3">
-          <span className="flex-1">اسم المهمة</span>
-          {props.showAssignee !== false && <span className="w-20 flex-none text-center">المسؤول</span>}
-          <span className="w-20 flex-none text-center">الاستحقاق</span>
-          <span className="w-20 flex-none text-center">الأولوية</span>
-          {props.showProject && <span className="hidden w-32 flex-none sm:block">المشروع</span>}
+          <span className="flex-1">{t("tasks.name")}</span>
+          {props.showAssignee !== false && <span className="w-20 flex-none text-center">{t("tasks.assignee")}</span>}
+          <span className="w-20 flex-none text-center">{t("tasks.dueColumn")}</span>
+          <span className="w-20 flex-none text-center">{t("tasks.priority")}</span>
+          {props.showProject && <span className="hidden w-32 flex-none sm:block">{t("tasks.project")}</span>}
         </div>
 
         {groups.map((g) => {
@@ -112,6 +114,7 @@ export default function TaskList(props: TaskListProps) {
             <SectionBlock
               key={gKey}
               {...props}
+              t={t}
               group={g}
               sectionTasks={list}
               collapsed={isCollapsed}
@@ -145,7 +148,7 @@ export default function TaskList(props: TaskListProps) {
                     setGroupTitle("");
                     setAddingGroup(false);
                   }}
-                  placeholder="اسم القسم…"
+                  placeholder={t("tasks.sectionName")}
                   className="w-64 rounded-field border border-saffron bg-surface px-2.5 py-1 text-sm font-bold focus:outline-none"
                 />
               </form>
@@ -154,7 +157,7 @@ export default function TaskList(props: TaskListProps) {
                 onClick={() => setAddingGroup(true)}
                 className="flex items-center gap-1.5 text-xs font-bold text-ink-3 hover:text-saffron"
               >
-                <Plus size={14} /> إضافة قسم
+                <Plus size={14} /> {t("tasks.addSection")}
               </button>
             )}
           </div>
@@ -177,12 +180,14 @@ function SectionBlock({
   sectionTasks,
   collapsed,
   onToggle,
+  t,
   ...props
 }: Omit<TaskListProps, "tasks"> & {
   group: ListGroup;
   sectionTasks: TaskRow[];
   collapsed: boolean;
   onToggle: () => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
@@ -208,7 +213,7 @@ function SectionBlock({
     <div ref={setNodeRef} className={clsx(isOver && "bg-accent-soft/30")}>
       {/* رأس القسم */}
       <div className="group/sec flex h-9 items-center gap-1.5 border-t border-line-soft px-2 first:border-t-0">
-        <button onClick={onToggle} className="rounded p-0.5 text-ink-3 hover:text-ink" aria-label="طي القسم">
+        <button onClick={onToggle} className="rounded p-0.5 text-ink-3 hover:text-ink" aria-label={t("tasks.collapseSection")}>
           <ChevronDown size={14} className={clsx("transition-transform", collapsed && "-rotate-90")} />
         </button>
         {renaming && group.id != null ? (
@@ -227,7 +232,7 @@ function SectionBlock({
           <button
             onDoubleClick={() => group.renamable && setRenaming(true)}
             className="text-sm font-bold"
-            title={group.renamable ? "نقر مزدوج لإعادة التسمية" : undefined}
+            title={group.renamable ? t("tasks.dblClickRename") : undefined}
           >
             {group.title}
           </button>
@@ -237,7 +242,7 @@ function SectionBlock({
         <button
           onClick={() => setAdding(true)}
           className="rounded p-1 text-ink-3/70 hover:text-saffron"
-          title="إضافة مهمة"
+          title={t("tasks.addTaskTitle")}
         >
           <Plus size={14} />
         </button>
@@ -246,7 +251,7 @@ function SectionBlock({
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="rounded p-1 text-ink-3/70 hover:text-ink"
-              title="خيارات القسم"
+              title={t("tasks.sectionOptions")}
             >
               <MoreHorizontal size={14} />
             </button>
@@ -259,18 +264,18 @@ function SectionBlock({
                   }}
                   className="block w-full rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
                 >
-                  إعادة تسمية القسم
+                  {t("tasks.renameSection")}
                 </button>
               )}
               {group.deletable && (
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    if (confirm(`حذف قسم «${group.title}»؟`)) props.onDeleteGroup?.(group.id as number);
+                    if (confirm(t("tasks.deleteSectionConfirm", { name: group.title }))) props.onDeleteGroup?.(group.id as number);
                   }}
                   className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-right text-xs font-semibold text-danger hover:bg-danger/10"
                 >
-                  <Trash2 size={12} /> حذف القسم
+                  <Trash2 size={12} /> {t("tasks.deleteSection")}
                 </button>
               )}
             </Popover>
@@ -281,8 +286,8 @@ function SectionBlock({
       {/* الصفوف */}
       {!collapsed && (
         <>
-          {sectionTasks.map((t) => (
-            <Row key={t.id} task={t} {...props} />
+          {sectionTasks.map((task) => (
+            <Row key={task.id} task={task} translate={t} {...props} />
           ))}
           {adding ? (
             <form
@@ -304,7 +309,7 @@ function SectionBlock({
                     setAdding(false);
                   }
                 }}
-                placeholder="اكتب اسم المهمة ثم Enter…"
+                placeholder={t("tasks.writeTitle")}
                 className="w-full bg-transparent text-sm focus:outline-none"
               />
             </form>
@@ -313,7 +318,7 @@ function SectionBlock({
               onClick={() => setAdding(true)}
               className="flex h-8 w-full items-center gap-2 border-t border-line-soft pr-9 text-xs font-semibold text-ink-3 hover:bg-line-soft/40 hover:text-saffron"
             >
-              <Plus size={13} /> إضافة مهمة…
+              <Plus size={13} /> {t("tasks.add")}
             </button>
           )}
         </>
@@ -322,7 +327,11 @@ function SectionBlock({
   );
 }
 
-function Row({ task, ...props }: Omit<TaskListProps, "tasks"> & { task: TaskRow }) {
+function Row({
+  task,
+  translate: t,
+  ...props
+}: Omit<TaskListProps, "tasks"> & { task: TaskRow; translate: ReturnType<typeof useI18n>["t"] }) {
   const pane = useTaskPane();
   const drag = useDraggable({ id: task.id });
   const drop = useDroppable({ id: `row-${task.id}` });
@@ -376,9 +385,9 @@ function Row({ task, ...props }: Omit<TaskListProps, "tasks"> & { task: TaskRow 
           pane.open(task.id);
         }}
         className="hidden flex-none items-center gap-1 rounded-field border border-line px-1.5 py-0.5 text-[10px] font-bold text-ink-3 hover:border-saffron hover:text-saffron group-hover/row:flex"
-        title="فتح التفاصيل"
+        title={t("tasks.details")}
       >
-        <PanelLeftOpen size={11} /> التفاصيل
+        <PanelLeftOpen size={11} /> {t("tasks.details")}
       </button>
       {subTotal > 0 && (
         <span className="hidden flex-none items-center gap-0.5 text-[10px] tabular-nums text-ink-3 sm:flex">

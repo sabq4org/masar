@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { api, queryClient } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import { MasarLogo, SariLine } from "../components/identity";
 
 export default function Login() {
+  const { t, locale, setLocale } = useI18n();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,6 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-paper p-4">
-      {/* نسيج ورقي خفيف */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
@@ -43,6 +44,15 @@ export default function Login() {
         className="pointer-events-none absolute -right-16 bottom-1/4 h-64 w-64 rounded-full bg-review/10"
       />
 
+      <button
+        type="button"
+        onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+        className="absolute end-4 top-4 z-10 rounded-field border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink-2 hover:border-saffron hover:text-saffron"
+        title={t("nav.language")}
+      >
+        {locale === "ar" ? "English" : "العربية"}
+      </button>
+
       <form
         onSubmit={submit}
         className="relative w-full max-w-sm rounded-sheet border border-line bg-surface p-8 shadow-card"
@@ -51,13 +61,13 @@ export default function Login() {
           <MasarLogo size={56} />
         </div>
         <p className="mb-2 text-center font-display text-sm font-semibold text-ink-2">
-          من الفكرة إلى النشر… على سطرٍ واحد.
+          {t("tagline")}
         </p>
         <div className="mx-auto mb-7 w-40">
           <SariLine progress={38} />
         </div>
 
-        <label className="mb-1 block text-sm font-bold">البريد الإلكتروني</label>
+        <label className="mb-1 block text-sm font-bold">{t("login.email")}</label>
         <input
           type="email"
           dir="ltr"
@@ -66,7 +76,7 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           className="mb-4 w-full rounded-field border border-line bg-surface px-3 py-2 text-left focus:border-saffron focus:outline-none"
         />
-        <label className="mb-1 block text-sm font-bold">كلمة المرور</label>
+        <label className="mb-1 block text-sm font-bold">{t("login.password")}</label>
         <input
           type="password"
           dir="ltr"
@@ -84,7 +94,7 @@ export default function Login() {
           disabled={busy}
           className="w-full rounded-field bg-ink py-2.5 font-bold text-paper hover:opacity-90 disabled:opacity-50"
         >
-          {busy ? "جارٍ الدخول…" : "دخول"}
+          {busy ? t("login.busy") : t("login.submit")}
         </button>
       </form>
     </div>
