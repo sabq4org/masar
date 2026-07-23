@@ -1,9 +1,10 @@
 import type { Express } from "express";
-import { asc, eq } from "drizzle-orm";
+import { z } from "zod";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { departments, statuses, statusTransitions, users } from "../../shared/schema";
-import { requireAuth } from "../auth";
-import { ROLE_LABELS_AR } from "../permissions";
+import { requireAuth, requirePermission } from "../auth";
+import { PERMISSIONS, ROLE_LABELS_AR } from "../permissions";
 
 /** بيانات مرجعية شبه ثابتة: الحالات، الانتقالات، الأقسام، المستخدمون للاختيار */
 export function registerMetaRoutes(app: Express) {
@@ -25,6 +26,62 @@ export function registerMetaRoutes(app: Express) {
       .orderBy(asc(departments.sortOrder));
     res.json(list);
   });
+
+  // ─── إدارة سير العمل (workflow.manage) ───
+  app.patch(
+    "/api/statuses/:id",
+    requirePermission(PERMISSIONS.WORKFLOW_MANAGE),
+    async (req, res) => {
+      const parsed = z
+        .object({
+          nameAr: z.string().min(1).max(60).optional(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        })
+        .safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: "بيانات غير صالحة" });
+      const [updated] = await db
+        .update(statuses)
+        .set(parsed.data)
+        .where(eq(statuses.id, Number(req.params.id)))
+        .returning();
+      if (!updated) return res.status(404).json({ error: "الحالة غير موجودة" });
+      res.json(updated);
+    },
+  );
+
+  app.post(
+    "/api/statuses/transitions",
+    requirePermission(PERMISSIONS.WORKFLOW_MANAGE),
+    async (req, res) => {
+      const parsed = z
+        .object({ fromStatusId: z.number().int(), toStatusId: z.number().int() })
+        .safeParse(req.body);
+      if (!parsed.success || parsed.data.fromStatusId === parsed.data.toStatusId)
+        return res.status(400).json({ error: "بيانات غير صالحة" });
+      await db.insert(statusTransitions).values(parsed.data).onConflictDoNothing();
+      res.status(201).json({ ok: true });
+    },
+  );
+
+  app.delete(
+    "/api/statuses/transitions",
+    requirePermission(PERMISSIONS.WORKFLOW_MANAGE),
+    async (req, res) => {
+      const parsed = z
+        .object({ fromStatusId: z.coerce.number().int(), toStatusId: z.coerce.number().int() })
+        .safeParse(req.query);
+      if (!parsed.success) return res.status(400).json({ error: "بيانات غير صالحة" });
+      await db
+        .delete(statusTransitions)
+        .where(
+          and(
+            eq(statusTransitions.fromStatusId, parsed.data.fromStatusId),
+            eq(statusTransitions.toStatusId, parsed.data.toStatusId),
+          ),
+        );
+      res.json({ ok: true });
+    },
+  );
 
   app.get("/api/users", requireAuth, async (_req, res) => {
     const list = await db

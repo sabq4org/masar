@@ -7,6 +7,8 @@ import { registerMetaRoutes } from "./routes/meta";
 import { registerProjectRoutes } from "./routes/projects";
 import { registerTaskRoutes } from "./routes/tasks";
 import { registerNotificationRoutes } from "./routes/notifications";
+import { registerUserAdminRoutes } from "./routes/users";
+import { registerReportRoutes } from "./routes/reports";
 import { pool } from "./db";
 
 const app = express();
@@ -18,6 +20,8 @@ registerMetaRoutes(app);
 registerProjectRoutes(app);
 registerTaskRoutes(app);
 registerNotificationRoutes(app);
+registerUserAdminRoutes(app);
+registerReportRoutes(app);
 
 app.get("/health", async (_req, res) => {
   try {

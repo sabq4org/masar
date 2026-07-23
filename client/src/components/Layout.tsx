@@ -1,14 +1,34 @@
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ListTodo, FolderKanban, Bell, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  ListTodo,
+  FolderKanban,
+  Users,
+  CalendarDays,
+  BarChart3,
+  Bell,
+  UserCog,
+  SlidersHorizontal,
+  LogOut,
+} from "lucide-react";
 import clsx from "clsx";
 import type { Me } from "../lib/types";
 import { api, queryClient } from "../lib/api";
 
 const NAV = [
-  { href: "/", label: "مهامي", icon: ListTodo },
+  { href: "/", label: "نظرة عامة", icon: LayoutDashboard },
+  { href: "/my", label: "مهامي", icon: ListTodo },
   { href: "/projects", label: "المشاريع", icon: FolderKanban },
+  { href: "/teams", label: "الفرق", icon: Users },
+  { href: "/calendar", label: "التقويم", icon: CalendarDays },
+  { href: "/reports", label: "التقارير", icon: BarChart3, perm: "reports.view" },
   { href: "/inbox", label: "الإشعارات", icon: Bell },
+];
+
+const ADMIN_NAV = [
+  { href: "/users", label: "المستخدمون", icon: UserCog, perm: "users.manage" },
+  { href: "/settings", label: "سير العمل", icon: SlidersHorizontal, perm: "workflow.manage" },
 ];
 
 export default function Layout({ me, children }: { me: Me; children: React.ReactNode }) {
@@ -18,11 +38,46 @@ export default function Layout({ me, children }: { me: Me; children: React.React
     refetchInterval: 30_000,
   });
 
+  const can = (perm?: string) =>
+    !perm || me.permissions.includes("*") || me.permissions.includes(perm);
+
   async function logout() {
     await api("POST", "/api/auth/logout");
     queryClient.clear();
     queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
   }
+
+  function NavLink({
+    href,
+    label,
+    icon: Icon,
+  }: {
+    href: string;
+    label: string;
+    icon: typeof ListTodo;
+  }) {
+    const active = href === "/" ? location === "/" : location.startsWith(href);
+    const badge = href === "/inbox" ? (notif?.unread ?? 0) : 0;
+    return (
+      <Link
+        href={href}
+        className={clsx(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold",
+          active ? "bg-accent-soft text-accent-ink" : "text-ink-2 hover:bg-line-soft",
+        )}
+      >
+        <Icon size={18} />
+        <span className="flex-1">{label}</span>
+        {badge > 0 && (
+          <span className="rounded-full bg-red-500 px-1.5 text-xs font-bold text-white tabular-nums">
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
+  const adminItems = ADMIN_NAV.filter((i) => can(i.perm));
 
   return (
     <div className="flex min-h-screen">
@@ -31,29 +86,18 @@ export default function Layout({ me, children }: { me: Me; children: React.React
           <div className="text-2xl font-extrabold text-accent">مسار</div>
           <div className="text-xs text-ink-3">صحيفة سبق</div>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = href === "/" ? location === "/" : location.startsWith(href);
-            const badge = href === "/inbox" ? (notif?.unread ?? 0) : 0;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold",
-                  active ? "bg-accent-soft text-accent-ink" : "text-ink-2 hover:bg-line-soft",
-                )}
-              >
-                <Icon size={18} />
-                <span className="flex-1">{label}</span>
-                {badge > 0 && (
-                  <span className="rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                    {badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+          {NAV.filter((i) => can(i.perm)).map((i) => (
+            <NavLink key={i.href} {...i} />
+          ))}
+          {adminItems.length > 0 && (
+            <>
+              <div className="px-3 pb-1 pt-4 text-[11px] font-bold text-ink-3">الإدارة</div>
+              {adminItems.map((i) => (
+                <NavLink key={i.href} {...i} />
+              ))}
+            </>
+          )}
         </nav>
         <div className="border-t border-line p-3">
           <div className="flex items-center gap-2 px-2 py-1">
