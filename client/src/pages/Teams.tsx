@@ -141,7 +141,12 @@ export default function Teams() {
                 {canManage && (
                   <button
                     onClick={() => {
-                      if (confirm(`حذف فريق «${d.nameAr}»؟`)) remove.mutate(d.id);
+                      if (
+                        confirm(
+                          `حذف فريق «${d.nameAr}»؟\nسيُفك ارتباط الأعضاء والمهام والمشاريع بهذا الفريق.`,
+                        )
+                      )
+                        remove.mutate(d.id);
                     }}
                     title="حذف الفريق"
                     className="text-ink-3 hover:text-danger"
