@@ -76,12 +76,17 @@ button, a, input, select, textarea {
 }
 .masar-urgent-dot { animation: masar-pulse 1.6s ease-out infinite; }
 
-/* لوحة التفاصيل — انزلاق من نهاية الشاشة (يسار في RTL) مثل أسانا */
-@keyframes masar-sheet-in {
+/* لوحة التفاصيل — انزلاق من جهة النهاية: يسار في RTL، يمين في LTR */
+@keyframes masar-sheet-in-rtl {
   from { transform: translateX(-16px); opacity: 0.8; }
   to { transform: translateX(0); opacity: 1; }
 }
-.masar-sheet { animation: masar-sheet-in 180ms ease-out; }
+@keyframes masar-sheet-in-ltr {
+  from { transform: translateX(16px); opacity: 0.8; }
+  to { transform: translateX(0); opacity: 1; }
+}
+[dir="rtl"] .masar-sheet { animation: masar-sheet-in-rtl 180ms ease-out; }
+[dir="ltr"] .masar-sheet { animation: masar-sheet-in-ltr 180ms ease-out; }
 
 /* إكمال المهمة — نبضة خضراء قصيرة بأسلوب أسانا */
 @keyframes masar-check-pop {
