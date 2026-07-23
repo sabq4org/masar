@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -128,11 +128,19 @@ function Column({
 }: Omit<TaskBoardProps, "tasks"> & { group: ListGroup; columnTasks: TaskRow[] }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
+  const titleRef = useRef("");
   const { setNodeRef, isOver } = useDroppable({ id: `col-${group.id}` });
 
-  const submit = () => {
-    if (title.trim()) props.onAddTask(title.trim(), group.id);
-    setTitle("");
+  const setTitleBoth = (v: string) => {
+    titleRef.current = v;
+    setTitle(v);
+  };
+
+  const submit = (close: boolean) => {
+    const t = titleRef.current.trim();
+    setTitleBoth("");
+    if (t) props.onAddTask(t, group.id);
+    if (close) setAdding(false);
   };
 
   return (
@@ -154,17 +162,20 @@ function Column({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            submit();
+            submit(false);
           }}
           className="mb-2"
         >
           <input
             autoFocus
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={() => {
-              submit();
-              setAdding(false);
+            onChange={(e) => setTitleBoth(e.target.value)}
+            onBlur={() => submit(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setTitleBoth("");
+                setAdding(false);
+              }
             }}
             placeholder="اسم المهمة…"
             className="w-full rounded-field border border-saffron bg-surface px-2.5 py-1.5 text-sm focus:outline-none"

@@ -12,7 +12,6 @@ import { registerUserAdminRoutes } from "./routes/users";
 import { registerReportRoutes } from "./routes/reports";
 import { registerTemplateRoutes } from "./routes/templates";
 import { registerSearchRoutes } from "./routes/search";
-import { registerAttachmentRoutes } from "./routes/attachments";
 import { registerStreamRoutes } from "./routes/stream";
 import { registerAiRoutes } from "./routes/ai";
 import { startJobs } from "./jobs";
@@ -40,7 +39,13 @@ registerUserAdminRoutes(app);
 registerReportRoutes(app);
 registerTemplateRoutes(app);
 registerSearchRoutes(app);
-registerAttachmentRoutes(app);
+// المرفقات اختيارية عند غياب multer — لا تُسقط باقي الـ API
+try {
+  const { registerAttachmentRoutes } = await import("./routes/attachments");
+  registerAttachmentRoutes(app);
+} catch (err) {
+  console.error("[masar] تعذّر تحميل مسارات المرفقات (npm install؟):", err);
+}
 registerStreamRoutes(app);
 registerAiRoutes(app);
 startJobs();

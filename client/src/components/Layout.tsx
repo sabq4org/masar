@@ -387,15 +387,18 @@ function CreateMenu({
   onNewProject: () => void;
 }) {
   const [title, setTitle] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const create = useMutation({
     mutationFn: (t: string) => api("POST", "/api/tasks", { title: t, assigneeId: me.id }),
     onSuccess: () => {
       setTitle("");
+      setError(null);
       onClose();
       queryClient.invalidateQueries({
         predicate: (q) => String(q.queryKey[0]).startsWith("/api/tasks"),
       });
     },
+    onError: (e: Error) => setError(e.message),
   });
   return (
     <Popover open={open} onClose={onClose} className="w-72 p-2">
@@ -403,6 +406,7 @@ function CreateMenu({
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          setError(null);
           if (title.trim()) create.mutate(title.trim());
         }}
         className="mb-1.5 flex items-center gap-1.5"
@@ -416,12 +420,13 @@ function CreateMenu({
         />
         <button
           type="submit"
-          disabled={!title.trim()}
+          disabled={!title.trim() || create.isPending}
           className="rounded-field bg-accent px-2.5 py-1.5 text-xs font-bold text-paper disabled:opacity-40"
         >
-          إضافة
+          {create.isPending ? "…" : "إضافة"}
         </button>
       </form>
+      {error && <div className="mb-1.5 px-1 text-[11px] font-semibold text-danger">{error}</div>}
       {canProject && (
         <button
           onClick={() => {
@@ -442,14 +447,18 @@ export function NewProjectModal({ onClose }: { onClose: () => void }) {
   const [, navigate] = useLocation();
   const [name, setName] = useState("");
   const [color, setColor] = useState("#C2701E");
+  const [error, setError] = useState<string | null>(null);
   const COLORS = ["#C2701E", "#33658A", "#2E7D5B", "#B0413E", "#A87A0E", "#46536B", "#5D8FB5", "#8C5A2E", "#274E6D", "#77705F"];
   const create = useMutation({
     mutationFn: () => api("POST", "/api/projects", { name: name.trim(), color }),
     onSuccess: (p: { id: number }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      queryClient.invalidateQueries({
+        predicate: (q) => String(q.queryKey[0] ?? "").startsWith("/api/projects"),
+      });
       onClose();
       navigate(`/projects/${p.id}`);
     },
+    onError: (e: Error) => setError(e.message),
   });
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-ink/30 p-4" onClick={onClose}>
@@ -461,6 +470,7 @@ export function NewProjectModal({ onClose }: { onClose: () => void }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            setError(null);
             if (name.trim()) create.mutate();
           }}
         >
@@ -485,6 +495,11 @@ export function NewProjectModal({ onClose }: { onClose: () => void }) {
               />
             ))}
           </div>
+          {error && (
+            <div className="mb-3 rounded-field border border-danger/30 bg-danger/5 px-3 py-2 text-xs font-semibold text-danger">
+              {error}
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={onClose} className="rounded-field px-3 py-1.5 text-xs font-bold text-ink-3 hover:bg-line-soft">
               إلغاء
@@ -494,7 +509,7 @@ export function NewProjectModal({ onClose }: { onClose: () => void }) {
               disabled={!name.trim() || create.isPending}
               className="rounded-field bg-accent px-4 py-1.5 text-xs font-bold text-paper hover:opacity-90 disabled:opacity-40"
             >
-              إنشاء المشروع
+              {create.isPending ? "جارٍ الإنشاء…" : "إنشاء المشروع"}
             </button>
           </div>
         </form>

@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { Calendar, LayoutGrid, List, Plus } from "lucide-react";
+import { Calendar, LayoutGrid, List } from "lucide-react";
 import { api, queryClient } from "../lib/api";
 import type { Me, MyTaskSection, TaskRow } from "../lib/types";
-import { Avatar, Spinner } from "../components/bits";
+import { Avatar, ErrorBar, Spinner } from "../components/bits";
 import TaskList, { type ListGroup } from "../components/TaskList";
 import TaskBoard from "../components/TaskBoard";
 import CalendarMonth from "../components/CalendarMonth";
@@ -82,14 +82,60 @@ export default function MyTasks() {
     onSettled: invalidate,
   });
 
+  const [flash, setFlash] = useState<string | null>(null);
+  const showError = (msg: string) => {
+    setFlash(msg);
+    setTimeout(() => setFlash(null), 4000);
+  };
+
   const addTask = useMutation({
     mutationFn: ({ title, groupId }: { title: string; groupId: number | null }) =>
-      api("POST", "/api/tasks", { title, assigneeId: me?.id }).then((task: TaskRow) =>
-        groupId && groupId !== defaultSection?.id
-          ? api("PATCH", `/api/tasks/${task.id}`, { myTasksSectionId: groupId })
-          : task,
-      ),
-    onSuccess: invalidate,
+      api("POST", "/api/tasks", {
+        title,
+        assigneeId: me?.id,
+        myTasksSectionId: groupId,
+      }),
+    onMutate: async ({ title, groupId }) => {
+      await queryClient.cancelQueries({ queryKey: [tasksKey] });
+      const prev = queryClient.getQueryData<TaskRow[] | null>([tasksKey]);
+      const optimistic: TaskRow = {
+        id: -Date.now(),
+        title,
+        description: null,
+        isCompleted: false,
+        completedAt: null,
+        taskType: "task",
+        approvalStatus: null,
+        priority: null,
+        tags: [],
+        assigneeId: me?.id ?? null,
+        projectId: null,
+        sectionId: null,
+        parentTaskId: null,
+        orderIndex: 0,
+        myTasksSectionId: groupId,
+        myTasksOrderIndex: 0,
+        dueAt: null,
+        startAt: null,
+        linkUrl: null,
+        isArchived: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        assignee: me
+          ? { id: me.id, name: me.name, avatarColor: me.avatarColor }
+          : null,
+        project: null,
+        section: null,
+        subtasks: [],
+      };
+      queryClient.setQueryData<TaskRow[] | null>([tasksKey], (old) => [optimistic, ...(old ?? [])]);
+      return { prev };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.prev !== undefined) queryClient.setQueryData([tasksKey], ctx.prev);
+      showError(e.message);
+    },
+    onSettled: invalidate,
   });
 
   const patchTask = useMutation({
@@ -143,6 +189,7 @@ export default function MyTasks() {
 
   return (
     <div>
+      <ErrorBar message={flash} />
       {/* ─── الرأس ─── */}
       <div className="mb-1 flex items-center gap-3">
         <Avatar name={me.name} color={me.avatarColor} size={9} />

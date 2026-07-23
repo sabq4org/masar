@@ -9,8 +9,9 @@ export const queryClient = new QueryClient({
         if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error ?? "خطأ");
         return res.json();
       },
-      staleTime: 30_000,
+      staleTime: 60_000,
       retry: 1,
+      refetchOnWindowFocus: false,
     },
   },
 });

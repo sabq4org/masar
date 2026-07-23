@@ -46,6 +46,8 @@ async function main() {
       alter table projects add column if not exists default_view varchar(20) not null default 'list';
       alter table notifications add column if not exists actor_id integer references users(id);
     `);
+    // الكود الجديد لا يكتب status_id — إن بقي NOT NULL تفشل كل إضافة مهمة
+    await client.query(`alter table tasks alter column status_id drop not null`).catch(() => {});
 
     if (await columnExists("tasks", "status_id")) {
       console.log("٢) تحويل الحالات القديمة إلى مكتملة/غير مكتملة…");

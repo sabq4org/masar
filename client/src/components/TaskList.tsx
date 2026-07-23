@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -186,13 +186,22 @@ function SectionBlock({
 }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
+  const titleRef = useRef("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const { setNodeRef, isOver } = useDroppable({ id: `grp-${group.id}` });
 
-  const submitAdd = () => {
-    if (title.trim()) props.onAddTask(title.trim(), group.id);
-    setTitle("");
+  const setTitleBoth = (v: string) => {
+    titleRef.current = v;
+    setTitle(v);
+  };
+
+  /** Enter ثم blur كان يضاعف الإنشاء — نقرأ من ref ونُصفّر فورًا */
+  const submitAdd = (close: boolean) => {
+    const t = titleRef.current.trim();
+    setTitleBoth("");
+    if (t) props.onAddTask(t, group.id);
+    if (close) setAdding(false);
   };
 
   return (
@@ -227,7 +236,7 @@ function SectionBlock({
         <div className="flex-1" />
         <button
           onClick={() => setAdding(true)}
-          className="hidden rounded p-1 text-ink-3 hover:text-saffron group-hover/sec:block"
+          className="rounded p-1 text-ink-3/70 hover:text-saffron"
           title="إضافة مهمة"
         >
           <Plus size={14} />
@@ -236,7 +245,8 @@ function SectionBlock({
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="hidden rounded p-1 text-ink-3 hover:text-ink group-hover/sec:block"
+              className="rounded p-1 text-ink-3/70 hover:text-ink"
+              title="خيارات القسم"
             >
               <MoreHorizontal size={14} />
             </button>
@@ -278,7 +288,7 @@ function SectionBlock({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                submitAdd();
+                submitAdd(false);
               }}
               className="flex h-9 items-center gap-2 border-t border-line-soft pl-3 pr-9"
             >
@@ -286,14 +296,11 @@ function SectionBlock({
               <input
                 autoFocus
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={() => {
-                  submitAdd();
-                  setAdding(false);
-                }}
+                onChange={(e) => setTitleBoth(e.target.value)}
+                onBlur={() => submitAdd(true)}
                 onKeyDown={(e) => {
                   if (e.key === "Escape") {
-                    setTitle("");
+                    setTitleBoth("");
                     setAdding(false);
                   }
                 }}

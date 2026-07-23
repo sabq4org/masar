@@ -5,13 +5,17 @@
 ## التشغيل
 
 ```bash
-npm install
+npm install            # إلزامي بعد كل سحب — غياب حزم مثل multer يُسقط الخادم بالكامل
 cp .env.example .env   # DATABASE_URL و SESSION_SECRET و ADMIN_PASSWORD
 npm run db:push        # دفع المخطط إلى القاعدة
 npm run seed           # الفرق + حساب المدير + أقسام «مهامي»
 npm run seed:demo      # (اختياري) مشروعان تجريبيان و١٦ مهمة و٣ مستخدمين
 npm run dev            # الخادم على 5180 والواجهة على 5181
 ```
+
+**مهم:** الواجهة على `5181` والـ API على `5180`. إن رأيت «تُضاف ولا تظهر» فتأكد أن `npm run dev` شغّال الطرفين (ليس Vite وحده).
+
+**السرعة محليًا:** قاعدة Neon البعيدة تضيف ~١–١.٥ ثانية لكل طلب. للتطوير السريع استخدم Postgres محلي في `DATABASE_URL` (مثل `postgresql://sabq:…@localhost:5432/masar`).
 
 الدخول الأولي: البريد وكلمة المرور من `ADMIN_EMAIL` / `ADMIN_PASSWORD` في `.env` — **غيّر كلمة المرور بعد أول دخول**.
 
@@ -21,7 +25,8 @@ npm run dev            # الخادم على 5180 والواجهة على 5181
 
 ```bash
 npm run migrate:asana   # ينقل البيانات: الحالات → مكتملة/غير مكتملة، subtasks → مهام كاملة…
-npm run db:push         # وافق على إسقاط الجداول القديمة (نُقلت بياناتها)
+npm run sync:asana      # يجعل status_id اختياريًا + ينشئ الجداول الناقصة (آمن، بلا حذف)
+npm run db:push         # (اختياري لاحقًا) وافق على إسقاط الجداول القديمة statuses/subtasks…
 npm run seed
 ```
 

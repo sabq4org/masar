@@ -31,6 +31,8 @@ const taskInput = z.object({
   departmentId: z.number().int().nullable().optional(),
   projectId: z.number().int().nullable().optional(),
   sectionId: z.number().int().nullable().optional(),
+  myTasksSectionId: z.number().int().nullable().optional(),
+  myTasksOrderIndex: z.number().int().optional(),
   parentTaskId: z.number().int().nullable().optional(),
   startAt: z.coerce.date().nullable().optional(),
   dueAt: z.coerce.date().nullable().optional(),
