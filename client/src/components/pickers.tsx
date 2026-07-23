@@ -6,6 +6,8 @@ import type { Priority, UserLite } from "../lib/types";
 import { PRIORITIES } from "../lib/types";
 import { Avatar } from "./bits";
 import { dueLabel, toDateInput } from "../lib/dates";
+import type { MsgKey } from "../locales/en";
+import { useI18n } from "../lib/i18n";
 
 /** حاوية منبثقة خفيفة: تُغلق بالنقر خارجها أو Esc */
 export function Popover({
@@ -66,6 +68,7 @@ export function AssigneePicker({
   onChange: (userId: number | null) => void;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const { data } = useQuery<UserLite[] | null>({ queryKey: ["/api/users"] });
@@ -86,7 +89,7 @@ export function AssigneePicker({
             ? "p-0"
             : "border border-dashed border-transparent px-1 py-0.5 hover:border-line hover:bg-line-soft/60",
         )}
-        title={value ? `المسؤول: ${value.name}` : "تعيين مسؤول"}
+        title={value ? t("tasks.assigneeNamed", { name: value.name }) : t("tasks.assignTo")}
       >
         {value ? (
           <>
@@ -95,7 +98,7 @@ export function AssigneePicker({
             {!compact && (
               <span
                 role="button"
-                aria-label="إزالة المسؤول"
+                aria-label={t("tasks.removeAssignee")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onChange(null);
@@ -124,7 +127,7 @@ export function AssigneePicker({
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="بحث عن عضو…"
+            placeholder={t("tasks.searchMember")}
             className="w-full bg-transparent text-xs focus:outline-none"
           />
         </div>
@@ -137,7 +140,7 @@ export function AssigneePicker({
               }}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold text-ink-3 hover:bg-line-soft"
             >
-              <X size={13} /> بلا مسؤول
+              <X size={13} /> {t("tasks.noAssignee")}
             </button>
           )}
           {filtered.map((u) => (
@@ -155,7 +158,7 @@ export function AssigneePicker({
             </button>
           ))}
           {!filtered.length && (
-            <div className="px-2 py-3 text-center text-xs text-ink-3">لا نتائج</div>
+            <div className="px-2 py-3 text-center text-xs text-ink-3">{t("noResults")}</div>
           )}
         </div>
       </Popover>
@@ -175,6 +178,7 @@ export function DueDatePicker({
   isCompleted?: boolean;
   compact?: boolean;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
 
   const quick = (days: number) => {
@@ -197,7 +201,7 @@ export function DueDatePicker({
           "flex items-center gap-1 rounded-chip text-xs font-semibold",
           !compact && "border border-dashed border-transparent px-1 py-0.5 hover:border-line hover:bg-line-soft/60",
         )}
-        title="تاريخ الاستحقاق"
+        title={t("tasks.due")}
       >
         {value ? (
           <span
@@ -225,9 +229,9 @@ export function DueDatePicker({
       </button>
       <Popover open={open} onClose={() => setOpen(false)} className="w-56 p-2">
         <div className="mb-2 grid grid-cols-3 gap-1 text-center text-[11px] font-bold">
-          <button onClick={() => quick(0)} className="rounded-md border border-line px-1.5 py-1 hover:bg-line-soft">اليوم</button>
-          <button onClick={() => quick(1)} className="rounded-md border border-line px-1.5 py-1 hover:bg-line-soft">غدًا</button>
-          <button onClick={() => quick(7)} className="rounded-md border border-line px-1.5 py-1 hover:bg-line-soft">أسبوع</button>
+          <button onClick={() => quick(0)} className="rounded-md border border-line px-1.5 py-1 hover:bg-line-soft">{t("tasks.today")}</button>
+          <button onClick={() => quick(1)} className="rounded-md border border-line px-1.5 py-1 hover:bg-line-soft">{t("tasks.tomorrow")}</button>
+          <button onClick={() => quick(7)} className="rounded-md border border-line px-1.5 py-1 hover:bg-line-soft">{t("tasks.week")}</button>
         </div>
         <input
           type="date"
@@ -249,7 +253,7 @@ export function DueDatePicker({
             }}
             className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-semibold text-ink-3 hover:bg-line-soft hover:text-danger"
           >
-            <X size={12} /> إزالة التاريخ
+            <X size={12} /> {t("tasks.removeDue")}
           </button>
         )}
       </Popover>
@@ -265,6 +269,7 @@ export function PriorityPicker({
   value: Priority | null;
   onChange: (p: Priority | null) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const current = value ? PRIORITIES[value] : null;
   return (
@@ -276,14 +281,14 @@ export function PriorityPicker({
           setOpen(!open);
         }}
         className="flex items-center rounded-chip border border-dashed border-transparent px-1 py-0.5 hover:border-line hover:bg-line-soft/60"
-        title="الأولوية"
+        title={t("tasks.priority")}
       >
         {current ? (
           <span
             className="rounded-chip px-2 py-0.5 text-[11px] font-bold"
             style={{ background: current.bg, color: current.fg }}
           >
-            {current.label}
+            {t(`priority.${value}` as MsgKey)}
           </span>
         ) : (
           <span className="px-1 text-xs text-ink-3">—</span>
@@ -303,7 +308,7 @@ export function PriorityPicker({
               className="rounded-chip px-2 py-0.5 text-[11px] font-bold"
               style={{ background: PRIORITIES[p].bg, color: PRIORITIES[p].fg }}
             >
-              {PRIORITIES[p].label}
+              {t(`priority.${p}` as MsgKey)}
             </span>
           </button>
         ))}
@@ -314,7 +319,7 @@ export function PriorityPicker({
           }}
           className="flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-xs font-semibold text-ink-3 hover:bg-line-soft"
         >
-          <X size={12} /> بلا أولوية
+          <X size={12} /> {t("priority.none")}
         </button>
       </Popover>
     </div>

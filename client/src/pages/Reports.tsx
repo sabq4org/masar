@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Sparkles } from "lucide-react";
-import { api } from "../lib/api";
 import { Avatar, Spinner } from "../components/bits";
 import { useTaskPane } from "../lib/taskPane";
 import type { TaskRow } from "../lib/types";
+import { useI18n } from "../lib/i18n";
 
 interface Overview {
   totals: { open: number; overdue: number; dueToday: number; done7d: number; total: number };
@@ -21,6 +21,7 @@ interface Overview {
 }
 
 export default function Reports() {
+  const { t } = useI18n();
   const pane = useTaskPane();
   const { data, isLoading } = useQuery<Overview | null>({ queryKey: ["/api/reports/overview"] });
   const { data: attention } = useQuery<{ overdue: TaskRow[]; awaitingApproval: TaskRow[] } | null>({
@@ -33,10 +34,10 @@ export default function Reports() {
   if (isLoading || !data) return <Spinner />;
 
   const cards = [
-    { label: "مهام مفتوحة", value: data.totals.open, tone: "text-ink" },
-    { label: "متأخرة", value: data.totals.overdue, tone: "text-danger" },
-    { label: "تستحق اليوم", value: data.totals.dueToday, tone: "text-wait" },
-    { label: "أُنجزت خلال ٧ أيام", value: data.totals.done7d, tone: "text-success" },
+    { label: t("reports.openTasks"), value: data.totals.open, tone: "text-ink" },
+    { label: t("reports.overdue"), value: data.totals.overdue, tone: "text-danger" },
+    { label: t("reports.dueToday"), value: data.totals.dueToday, tone: "text-wait" },
+    { label: t("reports.done7d"), value: data.totals.done7d, tone: "text-success" },
   ];
 
   async function loadBrief() {
@@ -46,7 +47,7 @@ export default function Reports() {
       const json = await res.json();
       setBrief(res.ok ? json.brief : json.error);
     } catch {
-      setBrief("تعذر توليد الملخص");
+      setBrief(t("reports.briefFailed"));
     }
     setBriefLoading(false);
   }
@@ -54,7 +55,7 @@ export default function Reports() {
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-4 flex items-center gap-3">
-        <h1 className="font-display text-xl font-bold">التقارير</h1>
+        <h1 className="font-display text-xl font-bold">{t("reports.title")}</h1>
         <div className="flex-1" />
         {aiStatus?.enabled && (
           <button
@@ -62,14 +63,14 @@ export default function Reports() {
             disabled={briefLoading}
             className="flex items-center gap-1.5 rounded-field border border-line px-3 py-1.5 text-xs font-bold text-ink-2 hover:border-saffron hover:text-saffron disabled:opacity-50"
           >
-            <Sparkles size={13} /> {briefLoading ? "يولّد…" : "الملخص الذكي"}
+            <Sparkles size={13} /> {briefLoading ? t("reports.generating") : t("reports.aiSummary")}
           </button>
         )}
         <a
           href="/api/tasks/export.csv"
           className="flex items-center gap-1.5 rounded-field border border-line px-3 py-1.5 text-xs font-bold text-ink-2 hover:border-saffron hover:text-saffron"
         >
-          <Download size={13} /> تصدير CSV
+          <Download size={13} /> {t("reports.export")}
         </a>
       </div>
 
@@ -91,7 +92,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* حسب المشروع */}
         <section className="rounded-card border border-line bg-surface p-4">
-          <h2 className="mb-3 text-sm font-bold">حسب المشروع</h2>
+          <h2 className="mb-3 text-sm font-bold">{t("reports.byProject")}</h2>
           <div className="space-y-2.5">
             {data.byProject.map((p) => {
               const total = p.open + p.done;
@@ -101,7 +102,11 @@ export default function Reports() {
                   <div className="mb-1 flex items-center gap-2 text-xs">
                     <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: p.color }} />
                     <span className="flex-1 truncate font-semibold">{p.name}</span>
-                    {p.overdue > 0 && <span className="font-bold text-danger tabular-nums">{p.overdue} متأخرة</span>}
+                    {p.overdue > 0 && (
+                      <span className="font-bold text-danger tabular-nums">
+                        {t("reports.overdueCount", { n: p.overdue })}
+                      </span>
+                    )}
                     <span className="text-ink-3 tabular-nums">{p.done}/{total}</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-chip bg-line-soft">
@@ -110,13 +115,13 @@ export default function Reports() {
                 </div>
               );
             })}
-            {!data.byProject.length && <div className="text-xs text-ink-3">لا بيانات</div>}
+            {!data.byProject.length && <div className="text-xs text-ink-3">{t("reports.noData")}</div>}
           </div>
         </section>
 
         {/* حسب العضو */}
         <section className="rounded-card border border-line bg-surface p-4">
-          <h2 className="mb-3 text-sm font-bold">عبء الأعضاء (المهام المفتوحة)</h2>
+          <h2 className="mb-3 text-sm font-bold">{t("reports.memberLoad")}</h2>
           <div className="space-y-2">
             {data.byUser.slice(0, 10).map((u) => {
               const max = Math.max(...data.byUser.map((x) => x.open), 1);
@@ -133,54 +138,54 @@ export default function Reports() {
                     </div>
                   </div>
                   {u.overdue > 0 && (
-                    <span className="w-14 flex-none text-left text-[10px] font-bold text-danger tabular-nums">
-                      {u.overdue} متأخرة
+                    <span className="w-14 flex-none text-start text-[10px] font-bold text-danger tabular-nums">
+                      {t("reports.overdueCount", { n: u.overdue })}
                     </span>
                   )}
                 </div>
               );
             })}
-            {!data.byUser.length && <div className="text-xs text-ink-3">لا مهام مسندة</div>}
+            {!data.byUser.length && <div className="text-xs text-ink-3">{t("reports.noAssigned")}</div>}
           </div>
         </section>
 
         {/* يحتاج انتباهًا */}
         <section className="rounded-card border border-line bg-surface p-4 lg:col-span-2">
-          <h2 className="mb-3 text-sm font-bold">يحتاج انتباهك</h2>
+          <h2 className="mb-3 text-sm font-bold">{t("reports.attention")}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <div className="mb-1.5 text-xs font-bold text-danger">متأخرة</div>
+              <div className="mb-1.5 text-xs font-bold text-danger">{t("reports.overdue")}</div>
               <div className="space-y-1">
-                {(attention?.overdue ?? []).map((t) => (
+                {(attention?.overdue ?? []).map((task) => (
                   <button
-                    key={t.id}
-                    onClick={() => pane.open(t.id)}
-                    className="flex w-full items-center gap-2 rounded-field border border-line-soft px-2.5 py-1.5 text-right text-xs font-semibold hover:bg-line-soft/50"
+                    key={task.id}
+                    onClick={() => pane.open(task.id)}
+                    className="flex w-full items-center gap-2 rounded-field border border-line-soft px-2.5 py-1.5 text-start text-xs font-semibold hover:bg-line-soft/50"
                   >
-                    <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} src={t.assignee.avatarUrl} size={5} />}
+                    <span className="min-w-0 flex-1 truncate">{task.title}</span>
+                    {task.assignee && <Avatar name={task.assignee.name} color={task.assignee.avatarColor} src={task.assignee.avatarUrl} size={5} />}
                   </button>
                 ))}
                 {!(attention?.overdue ?? []).length && (
-                  <div className="text-xs text-ink-3">لا متأخرات — ممتاز</div>
+                  <div className="text-xs text-ink-3">{t("reports.noOverdue")}</div>
                 )}
               </div>
             </div>
             <div>
-              <div className="mb-1.5 text-xs font-bold text-review">اعتمادات معلقة</div>
+              <div className="mb-1.5 text-xs font-bold text-review">{t("reports.pendingApproval")}</div>
               <div className="space-y-1">
-                {(attention?.awaitingApproval ?? []).map((t) => (
+                {(attention?.awaitingApproval ?? []).map((task) => (
                   <button
-                    key={t.id}
-                    onClick={() => pane.open(t.id)}
-                    className="flex w-full items-center gap-2 rounded-field border border-line-soft px-2.5 py-1.5 text-right text-xs font-semibold hover:bg-line-soft/50"
+                    key={task.id}
+                    onClick={() => pane.open(task.id)}
+                    className="flex w-full items-center gap-2 rounded-field border border-line-soft px-2.5 py-1.5 text-start text-xs font-semibold hover:bg-line-soft/50"
                   >
-                    <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                    {t.assignee && <Avatar name={t.assignee.name} color={t.assignee.avatarColor} src={t.assignee.avatarUrl} size={5} />}
+                    <span className="min-w-0 flex-1 truncate">{task.title}</span>
+                    {task.assignee && <Avatar name={task.assignee.name} color={task.assignee.avatarColor} src={task.assignee.avatarUrl} size={5} />}
                   </button>
                 ))}
                 {!(attention?.awaitingApproval ?? []).length && (
-                  <div className="text-xs text-ink-3">لا اعتمادات معلقة</div>
+                  <div className="text-xs text-ink-3">{t("reports.noPendingApproval")}</div>
                 )}
               </div>
             </div>

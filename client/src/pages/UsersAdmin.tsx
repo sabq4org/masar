@@ -4,7 +4,9 @@ import { Plus, KeyRound } from "lucide-react";
 import clsx from "clsx";
 import { api, queryClient } from "../lib/api";
 import type { DepartmentRow } from "../lib/types";
+import type { MsgKey } from "../locales/en";
 import { Avatar } from "../components/bits";
+import { useI18n, useRoleLabel } from "../lib/i18n";
 
 interface AdminUser {
   id: number;
@@ -27,7 +29,17 @@ interface RolesPayload {
   groups: { label: string; roles: RoleOpt[] }[];
 }
 
+/** Arabic group labels from API → i18n keys */
+const ROLE_GROUP_LABEL_KEYS: Record<string, MsgKey> = {
+  "تنفيذي": "roleGroup.executive",
+  "تشغيلي": "roleGroup.ops",
+  "تخطيط وتطوير": "roleGroup.planning",
+  "عام": "roleGroup.general",
+};
+
 export default function UsersAdmin() {
+  const { t } = useI18n();
+  const roleLabel = useRoleLabel();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "member", departmentId: "" });
   const [error, setError] = useState<string | null>(null);
@@ -78,20 +90,25 @@ export default function UsersAdmin() {
   });
 
   function resetPassword(u: AdminUser) {
-    const pwd = prompt(`كلمة مرور جديدة لـ ${u.name} (8 أحرف على الأقل):`);
+    const pwd = prompt(t("users.resetPrompt", { name: u.name }));
     if (pwd && pwd.length >= 8) update.mutate({ id: u.id, patch: { password: pwd } });
-    else if (pwd) alert("كلمة المرور قصيرة");
+    else if (pwd) alert(t("users.passwordShort"));
+  }
+
+  function groupLabel(apiLabel: string) {
+    const key = ROLE_GROUP_LABEL_KEYS[apiLabel];
+    return key ? t(key) : apiLabel;
   }
 
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold">المستخدمون</h1>
+        <h1 className="text-2xl font-extrabold">{t("users.title")}</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
           className="flex items-center gap-1.5 rounded-field bg-accent px-4 py-2 text-sm font-bold text-paper hover:opacity-90"
         >
-          <Plus size={16} /> مستخدم جديد
+          <Plus size={16} /> {t("users.new")}
         </button>
       </div>
 
@@ -109,27 +126,29 @@ export default function UsersAdmin() {
           }}
           className="mb-6 grid grid-cols-1 gap-3 rounded-card border border-line bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3"
         >
-          <Input label="الاسم" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-          <Input label="البريد" type="email" dir="ltr" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
-          <Input label="كلمة المرور (٨+ أحرف)" type="password" dir="ltr" value={form.password} onChange={(v) => setForm({ ...form, password: v })} />
+          <Input label={t("users.name")} value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+          <Input label={t("users.email")} type="email" dir="ltr" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+          <Input label={t("users.password")} type="password" dir="ltr" value={form.password} onChange={(v) => setForm({ ...form, password: v })} />
           <div>
-            <label className="mb-1 block text-xs font-bold text-ink-2">الدور</label>
+            <label className="mb-1 block text-xs font-bold text-ink-2">{t("users.role")}</label>
             <RoleSelect
               value={form.role}
               onChange={(v) => setForm({ ...form, role: v })}
               groups={roleGroups}
               flat={rolesFlat}
+              roleLabel={roleLabel}
+              groupLabel={groupLabel}
               className="w-full rounded-field border border-line px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-bold text-ink-2">الفريق</label>
+            <label className="mb-1 block text-xs font-bold text-ink-2">{t("users.team")}</label>
             <select
               value={form.departmentId}
               onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
               className="w-full rounded-field border border-line px-3 py-2 text-sm"
             >
-              <option value="">بلا فريق</option>
+              <option value="">{t("users.noTeam")}</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>{d.nameAr}</option>
               ))}
@@ -140,7 +159,7 @@ export default function UsersAdmin() {
               disabled={create.isPending}
               className="w-full rounded-field bg-accent py-2 font-bold text-paper disabled:opacity-50"
             >
-              إنشاء
+              {t("users.create")}
             </button>
           </div>
         </form>
@@ -149,11 +168,11 @@ export default function UsersAdmin() {
       <div className="overflow-x-auto rounded-card border border-line bg-surface">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-line bg-line-soft/60 text-right text-xs text-ink-2">
-              <th className="px-4 py-2.5 font-bold">المستخدم</th>
-              <th className="px-4 py-2.5 font-bold">الدور</th>
-              <th className="px-4 py-2.5 font-bold">الفريق</th>
-              <th className="px-4 py-2.5 font-bold">الحالة</th>
+            <tr className="border-b border-line bg-line-soft/60 text-start text-xs text-ink-2">
+              <th className="px-4 py-2.5 font-bold">{t("users.user")}</th>
+              <th className="px-4 py-2.5 font-bold">{t("users.role")}</th>
+              <th className="px-4 py-2.5 font-bold">{t("users.team")}</th>
+              <th className="px-4 py-2.5 font-bold">{t("users.status")}</th>
               <th className="px-4 py-2.5 font-bold"></th>
             </tr>
           </thead>
@@ -175,6 +194,8 @@ export default function UsersAdmin() {
                     onChange={(v) => update.mutate({ id: u.id, patch: { role: v } })}
                     groups={roleGroups}
                     flat={rolesFlat}
+                    roleLabel={roleLabel}
+                    groupLabel={groupLabel}
                     className="rounded-field border border-line px-2 py-1 text-xs"
                   />
                 </td>
@@ -189,7 +210,7 @@ export default function UsersAdmin() {
                     }
                     className="rounded-field border border-line px-2 py-1 text-xs"
                   >
-                    <option value="">بلا فريق</option>
+                    <option value="">{t("users.noTeam")}</option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>{d.nameAr}</option>
                     ))}
@@ -203,13 +224,13 @@ export default function UsersAdmin() {
                       u.isActive ? "bg-success/15 text-success" : "bg-line-soft text-ink-3",
                     )}
                   >
-                    {u.isActive ? "نشط" : "معطّل"}
+                    {u.isActive ? t("users.active") : t("users.inactive")}
                   </button>
                 </td>
                 <td className="px-4 py-2.5">
                   <button
                     onClick={() => resetPassword(u)}
-                    title="إعادة تعيين كلمة المرور"
+                    title={t("users.resetPassword")}
                     className="text-ink-3 hover:text-saffron"
                   >
                     <KeyRound size={15} />
@@ -229,29 +250,33 @@ function RoleSelect({
   onChange,
   groups,
   flat,
+  roleLabel,
+  groupLabel,
   className,
 }: {
   value: string;
   onChange: (v: string) => void;
   groups: { label: string; roles: RoleOpt[] }[] | null;
   flat: RoleOpt[];
+  roleLabel: (role: string) => string;
+  groupLabel: (apiLabel: string) => string;
   className?: string;
 }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} className={className}>
       {groups
         ? groups.map((g) => (
-            <optgroup key={g.label} label={g.label}>
+            <optgroup key={g.label} label={groupLabel(g.label)}>
               {g.roles.map((r) => (
                 <option key={r.value} value={r.value}>
-                  {r.label}
+                  {roleLabel(r.value)}
                 </option>
               ))}
             </optgroup>
           ))
         : flat.map((r) => (
             <option key={r.value} value={r.value}>
-              {r.label}
+              {roleLabel(r.value)}
             </option>
           ))}
     </select>

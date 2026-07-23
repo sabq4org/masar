@@ -26,18 +26,21 @@ import TaskBoard from "../components/TaskBoard";
 import Timeline from "../components/Timeline";
 import CalendarMonth from "../components/CalendarMonth";
 import { relTime } from "../lib/dates";
+import type { MsgKey } from "../locales/en";
+import { useI18n } from "../lib/i18n";
 
 type Tab = "overview" | "list" | "board" | "timeline" | "calendar";
 
-const TABS: { key: Tab; label: string; icon: typeof List }[] = [
-  { key: "overview", label: "نظرة عامة", icon: Newspaper },
-  { key: "list", label: "قائمة", icon: List },
-  { key: "board", label: "لوحة", icon: LayoutGrid },
-  { key: "timeline", label: "الجدول الزمني", icon: GanttChartSquare },
-  { key: "calendar", label: "التقويم", icon: Calendar },
+const TABS: { key: Tab; labelKey: MsgKey; icon: typeof List }[] = [
+  { key: "overview", labelKey: "tasks.overview", icon: Newspaper },
+  { key: "list", labelKey: "tasks.list", icon: List },
+  { key: "board", labelKey: "tasks.board", icon: LayoutGrid },
+  { key: "timeline", labelKey: "tasks.timeline", icon: GanttChartSquare },
+  { key: "calendar", labelKey: "tasks.calendar", icon: Calendar },
 ];
 
 export default function ProjectPage({ id, me }: { id: number; me: Me }) {
+  const { t } = useI18n();
   const [, navigate] = useLocation();
   const [tab, setTab] = useState<Tab>(() => {
     try {
@@ -83,9 +86,9 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
       deletable: canManage,
       renamable: canManage,
     }));
-    if (hasOrphans) gs.unshift({ id: null, title: "بلا قسم" });
+    if (hasOrphans) gs.unshift({ id: null, title: t("tasks.noSection") });
     return gs;
-  }, [sections, hasOrphans, canManage]);
+  }, [sections, hasOrphans, canManage, t]);
 
   function flash(msg: string) {
     setError(msg);
@@ -211,13 +214,16 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
 
   const saveTemplate = useMutation({
     mutationFn: (name: string) => api("POST", `${projectKey}/save-template`, { name }),
-    onSuccess: () => flash("حُفظ القالب — تجده في صفحة القوالب"),
+    onSuccess: () => flash(t("projects.templateSaved")),
     onError: (e: Error) => flash(e.message),
   });
 
   if (!project) return <Spinner />;
 
   const statusMeta = project.currentStatus ? PROJECT_STATUS_META[project.currentStatus] : null;
+  const statusLabel = project.currentStatus
+    ? t(`status.${project.currentStatus}` as MsgKey)
+    : null;
 
   const common = {
     groups,
@@ -241,7 +247,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
             onClick={() => canManage && setColorOpen(!colorOpen)}
             className="flex h-9 w-9 items-center justify-center rounded-field text-sm font-bold text-paper"
             style={{ background: project.color }}
-            title={canManage ? "تغيير اللون" : undefined}
+            title={canManage ? t("projects.changeColor") : undefined}
           >
             {project.name.slice(0, 1)}
           </button>
@@ -281,18 +287,18 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
         <button
           onClick={() => star.mutate()}
           className={clsx("rounded p-1", project.isStarred ? "text-saffron" : "text-ink-3 hover:text-saffron")}
-          title="المفضلة"
+          title={project.isStarred ? t("projects.unstar") : t("projects.star")}
         >
           <Star size={17} fill={project.isStarred ? "currentColor" : "none"} />
         </button>
 
-        {statusMeta && (
+        {statusMeta && statusLabel && (
           <button
             onClick={() => pickTab("overview")}
             className="rounded-chip px-2.5 py-0.5 text-[11px] font-bold"
             style={{ background: statusMeta.color + "22", color: statusMeta.color }}
           >
-            {statusMeta.label}
+            {statusLabel}
           </button>
         )}
 
@@ -314,10 +320,10 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
             onClick={() => setShareOpen(!shareOpen)}
             className="flex items-center gap-1.5 rounded-field border border-line px-2.5 py-1 text-xs font-bold text-ink-2 hover:border-saffron hover:text-saffron"
           >
-            <UserPlus size={13} /> مشاركة
+            <UserPlus size={13} /> {t("projects.share")}
           </button>
           <Popover open={shareOpen} onClose={() => setShareOpen(false)} align="end" className="max-h-72 w-60 overflow-y-auto">
-            <div className="px-2 py-1 text-[10px] font-bold text-ink-3">أعضاء المشروع</div>
+            <div className="px-2 py-1 text-[10px] font-bold text-ink-3">{t("projects.projectMembers")}</div>
             {(project.members ?? []).map((m) => (
               <div key={m.userId} className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-line-soft">
                 <Avatar name={m.name} color={m.avatarColor} src={m.avatarUrl} size={6} />
@@ -326,11 +332,11 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
                   onClick={() => sectionOp.mutate({ method: "DELETE", url: `${projectKey}/members/${m.userId}` })}
                   className="hidden text-[10px] font-bold text-ink-3 hover:text-danger group-hover:block"
                 >
-                  إزالة
+                  {t("projects.removeMember")}
                 </button>
               </div>
             ))}
-            <div className="mt-1 border-t border-line-soft px-2 py-1 text-[10px] font-bold text-ink-3">إضافة عضو</div>
+            <div className="mt-1 border-t border-line-soft px-2 py-1 text-[10px] font-bold text-ink-3">{t("projects.addMember")}</div>
             {users
               .filter((u) => !(project.members ?? []).some((m) => m.userId === u.id))
               .map((u) => (
@@ -357,12 +363,12 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  const name = prompt("اسم القالب:", `قالب — ${project.name}`);
+                  const name = prompt(t("projects.templateNamePrompt"), t("projects.templateDefaultName", { name: project.name }));
                   if (name?.trim()) saveTemplate.mutate(name.trim());
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
               >
-                <BookmarkPlus size={13} /> حفظ كقالب
+                <BookmarkPlus size={13} /> {t("projects.saveTemplate")}
               </button>
               <button
                 onClick={() => {
@@ -371,12 +377,12 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
               >
-                <Archive size={13} /> {project.status === "archived" ? "إلغاء الأرشفة" : "أرشفة المشروع"}
+                <Archive size={13} /> {project.status === "archived" ? t("projects.unarchive") : t("projects.archive")}
               </button>
               <button
                 onClick={() => {
                   setMenuOpen(false);
-                  if (confirm(`حذف مشروع «${project.name}» نهائيًا؟ مهامه ستبقى بلا مشروع.`)) {
+                  if (confirm(t("projects.deleteConfirmDetail", { name: project.name }))) {
                     api("DELETE", projectKey).then(() => {
                       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
                       navigate("/projects");
@@ -385,7 +391,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold text-danger hover:bg-danger/10"
               >
-                <Trash2 size={13} /> حذف المشروع
+                <Trash2 size={13} /> {t("projects.deleteProject")}
               </button>
             </Popover>
           </div>
@@ -394,7 +400,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
 
       {/* ─── التبويبات ─── */}
       <div className="mb-3 flex items-center gap-1 overflow-x-auto border-b border-line">
-        {TABS.map(({ key, label, icon: Icon }) => (
+        {TABS.map(({ key, labelKey, icon: Icon }) => (
           <button
             key={key}
             onClick={() => pickTab(key)}
@@ -403,7 +409,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
               tab === key ? "border-saffron text-ink" : "border-transparent text-ink-3 hover:text-ink",
             )}
           >
-            <Icon size={14} /> {label}
+            <Icon size={14} /> {t(labelKey)}
           </button>
         ))}
         <div className="flex-1" />
@@ -414,7 +420,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="تصفية…"
+                placeholder={t("projects.filter")}
                 className="w-24 bg-transparent text-xs focus:outline-none"
               />
             </div>
@@ -423,7 +429,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
               onChange={(e) => setFilterAssignee(e.target.value ? Number(e.target.value) : "")}
               className="hidden h-7 rounded-field border border-line bg-surface px-1.5 text-xs sm:block"
             >
-              <option value="">الكل</option>
+              <option value="">{t("all")}</option>
               {users.map((u) => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
@@ -435,7 +441,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
                 onChange={(e) => setShowCompleted(e.target.checked)}
                 className="accent-[var(--masar-saffron)]"
               />
-              المكتملة
+              {t("tasks.showCompleted")}
             </label>
           </div>
         )}
@@ -445,7 +451,7 @@ export default function ProjectPage({ id, me }: { id: number; me: Me }) {
       {isLoading && tab !== "overview" ? (
         <Spinner />
       ) : tab === "overview" ? (
-        <OverviewTab project={project} me={me} canManage={canManage} onPatch={(f) => patchProject.mutate(f)} />
+        <OverviewTab project={project} me={me} canManage={canManage} onPatch={(f) => patchProject.mutate(f)} t={t} />
       ) : tab === "list" ? (
         <TaskList
           {...common}
@@ -474,11 +480,13 @@ function OverviewTab({
   me,
   canManage,
   onPatch,
+  t,
 }: {
   project: ProjectRow;
   me: Me;
   canManage: boolean;
   onPatch: (fields: Record<string, unknown>) => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const updatesKey = `/api/projects/${project.id}/status-updates`;
   const { data: updatesData } = useQuery<StatusUpdateRow[] | null>({ queryKey: [updatesKey] });
@@ -502,11 +510,11 @@ function OverviewTab({
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         <section className="rounded-card border border-line bg-surface p-4">
-          <h2 className="mb-2 text-sm font-bold">عن المشروع</h2>
+          <h2 className="mb-2 text-sm font-bold">{t("projects.about")}</h2>
           <textarea
             key={project.description ?? ""}
             defaultValue={project.description ?? ""}
-            placeholder="اكتب وصفًا يعرّف الفريق بهدف المشروع…"
+            placeholder={t("projects.aboutPlaceholder")}
             rows={3}
             readOnly={!canManage}
             onBlur={(e) => {
@@ -518,7 +526,7 @@ function OverviewTab({
         </section>
 
         <section className="rounded-card border border-line bg-surface p-4">
-          <h2 className="mb-3 text-sm font-bold">تحديثات الحالة</h2>
+          <h2 className="mb-3 text-sm font-bold">{t("projects.statusUpdates")}</h2>
           <div className="mb-4 rounded-field border border-line-soft p-3">
             <div className="mb-2 flex flex-wrap gap-1.5">
               {(Object.keys(PROJECT_STATUS_META) as ProjectStatusType[]).map((s) => {
@@ -535,7 +543,7 @@ function OverviewTab({
                       borderColor: active ? meta.color : "transparent",
                     }}
                   >
-                    {meta.label}
+                    {t(`status.${s}` as MsgKey)}
                   </button>
                 );
               })}
@@ -543,13 +551,13 @@ function OverviewTab({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="عنوان التحديث (اختياري)"
+              placeholder={t("projects.updateTitle")}
               className="mb-2 w-full rounded-field border border-line bg-paper px-3 py-1.5 text-sm focus:border-saffron focus:outline-none"
             />
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="ماذا حدث هذا الأسبوع؟ ما التالي؟"
+              placeholder={t("projects.updateBody")}
               rows={2}
               className="mb-2 w-full resize-y rounded-field border border-line bg-paper px-3 py-1.5 text-sm focus:border-saffron focus:outline-none"
             />
@@ -559,7 +567,7 @@ function OverviewTab({
                 disabled={publish.isPending}
                 className="rounded-field bg-accent px-3.5 py-1.5 text-xs font-bold text-paper hover:opacity-90 disabled:opacity-40"
               >
-                نشر التحديث
+                {t("projects.publishUpdate")}
               </button>
             </div>
           </div>
@@ -576,7 +584,7 @@ function OverviewTab({
                       className="rounded-chip px-2 py-0.5 text-[10px] font-bold"
                       style={{ background: meta.color + "22", color: meta.color }}
                     >
-                      {meta.label}
+                      {t(`status.${u.statusType}` as MsgKey)}
                     </span>
                     <span className="flex-1" />
                     <span className="text-[10px] text-ink-3">{relTime(u.createdAt)}</span>
@@ -587,7 +595,7 @@ function OverviewTab({
               );
             })}
             {!updates.length && (
-              <div className="py-4 text-center text-xs text-ink-3">لا تحديثات حالة بعد — انشر أول تحديث</div>
+              <div className="py-4 text-center text-xs text-ink-3">{t("projects.noStatusUpdates")}</div>
             )}
           </div>
         </section>
@@ -595,19 +603,19 @@ function OverviewTab({
 
       <div>
         <section className="rounded-card border border-line bg-surface p-4">
-          <h2 className="mb-3 text-sm font-bold">الأعضاء</h2>
+          <h2 className="mb-3 text-sm font-bold">{t("projects.members")}</h2>
           <div className="space-y-1.5">
             {(project.members ?? []).map((m) => (
               <div key={m.userId} className="flex items-center gap-2">
                 <Avatar name={m.name} color={m.avatarColor} src={m.avatarUrl} size={7} />
                 <span className="truncate text-xs font-semibold">{m.name}</span>
                 {m.userId === project.ownerId && (
-                  <span className="rounded-chip bg-line-soft px-1.5 text-[10px] font-bold text-ink-3">مالك</span>
+                  <span className="rounded-chip bg-line-soft px-1.5 text-[10px] font-bold text-ink-3">{t("projects.owner")}</span>
                 )}
               </div>
             ))}
             {!(project.members ?? []).length && (
-              <div className="text-xs text-ink-3">لا أعضاء — أضفهم من زر «مشاركة»</div>
+              <div className="text-xs text-ink-3">{t("projects.noMembersShare")}</div>
             )}
           </div>
         </section>

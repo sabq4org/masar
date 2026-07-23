@@ -7,9 +7,11 @@ import type { NotificationRow } from "../lib/types";
 import { Avatar, Spinner } from "../components/bits";
 import { relTime } from "../lib/dates";
 import { useTaskPane } from "../lib/taskPane";
+import { useI18n } from "../lib/i18n";
 
 /** الوارد — نموذج أسانا: الأنشطة غير المؤرشفة ثم الأرشيف */
 export default function Inbox() {
+  const { t } = useI18n();
   const pane = useTaskPane();
   const [tab, setTab] = useState<"inbox" | "archive">("inbox");
   const { data, isLoading } = useQuery<{ items: NotificationRow[]; unread: number } | null>({
@@ -32,14 +34,17 @@ export default function Inbox() {
     onSuccess: invalidate,
   });
 
+  const activityLabel =
+    inbox.length > 0 ? `${t("inbox.activity")} (${inbox.length})` : t("inbox.activity");
+
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-1 font-display text-xl font-bold">الوارد</h1>
+      <h1 className="mb-1 font-display text-xl font-bold">{t("inbox.title")}</h1>
       <div className="mb-3 flex items-center border-b border-line">
         {(
           [
-            ["inbox", `الأنشطة${inbox.length ? ` (${inbox.length})` : ""}`],
-            ["archive", "الأرشيف"],
+            ["inbox", activityLabel],
+            ["archive", t("inbox.archived")],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -59,7 +64,7 @@ export default function Inbox() {
             onClick={() => readAll.mutate()}
             className="flex items-center gap-1 pb-1 text-xs font-semibold text-ink-3 hover:text-saffron"
           >
-            <CheckCheck size={13} /> أرشفة الكل
+            <CheckCheck size={13} /> {t("inbox.archiveAll")}
           </button>
         )}
       </div>
@@ -97,7 +102,7 @@ export default function Inbox() {
                 mark.mutate({ id: n.id, read: !n.isRead });
               }}
               className="hidden flex-none rounded p-1.5 text-ink-3 hover:bg-line-soft hover:text-ink group-hover:block"
-              title={n.isRead ? "إعادة إلى الوارد" : "أرشفة"}
+              title={n.isRead ? t("inbox.unarchive") : t("inbox.archive")}
             >
               {n.isRead ? <Mail size={14} /> : <Archive size={14} />}
             </button>
@@ -107,7 +112,7 @@ export default function Inbox() {
           <div className="flex flex-col items-center gap-2 py-14 text-ink-3">
             <BellOff size={22} />
             <span className="text-sm">
-              {tab === "inbox" ? "لا جديد — الوارد نظيف" : "الأرشيف فارغ"}
+              {tab === "inbox" ? t("inbox.empty") : t("inbox.archiveEmpty")}
             </span>
           </div>
         )}

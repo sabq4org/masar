@@ -1,36 +1,45 @@
+import { useI18n } from "../lib/i18n";
+
 /**
  * شعار «مسار» — مطابق لبناء دليل الهوية:
  * الكلمة بخط Alexandria وكشيدة ممدودة، وسطر الكتابة يواصل طريقه
  * خارج الكلمة على مستوى الكشيدة نفسه لينتهي بنقطة زعفرانية.
  * النِّسَب مأخوذة من الوثيقة (بالنسبة لحجم الخط): السطر يبدأ بعد فجوة
  * 8٪ من نهاية الكلمة، طوله 57٪، سماكته 5٪، والنقطة قطرها 17٪.
+ * بالإنجليزية: كلمة Masar بنفس الزخرفة (السطر + النقطة).
  */
 export function MasarLogo({ size = 26 }: { size?: number }) {
-  const u = size / 120; // معامل النسب — الوثيقة مبنية على 120px
+  const { locale, t } = useI18n();
+  const u = size / 120;
+  const word = locale === "en" ? "Masar" : "مســــار";
+  const isEn = locale === "en";
   return (
     <span
       className="relative inline-block select-none"
-      style={{ paddingLeft: 110 * u, lineHeight: 1 }}
-      aria-label="مسار"
+      style={{ paddingInlineEnd: isEn ? 72 * u : 110 * u, lineHeight: 1 }}
+      aria-label={t("appName")}
     >
       <span
         style={{
-          fontFamily: "Alexandria, 'IBM Plex Sans Arabic', sans-serif",
+          fontFamily: isEn
+            ? "Alexandria, 'IBM Plex Sans', system-ui, sans-serif"
+            : "Alexandria, 'IBM Plex Sans Arabic', sans-serif",
           fontWeight: 700,
           fontSize: size,
           lineHeight: 1,
           color: "var(--masar-ink)",
         }}
       >
-        مســــار
+        {word}
       </span>
       <span
         aria-hidden="true"
         style={{
           position: "absolute",
           bottom: 14 * u,
-          left: 32 * u,
-          width: 68 * u,
+          ...(isEn
+            ? { left: "auto" as const, right: -60 * u, width: 52 * u }
+            : { left: 32 * u, width: 68 * u }),
           height: Math.max(6 * u, 2),
           background: "var(--masar-ink)",
           borderRadius: 3 * u,
@@ -41,7 +50,9 @@ export function MasarLogo({ size = 26 }: { size?: number }) {
         style={{
           position: "absolute",
           bottom: 7 * u,
-          left: 6 * u,
+          ...(isEn
+            ? { left: "auto" as const, right: -78 * u }
+            : { left: 6 * u }),
           width: Math.max(20 * u, 5),
           height: Math.max(20 * u, 5),
           background: "var(--masar-saffron)",

@@ -5,9 +5,11 @@ import { api, queryClient } from "../lib/api";
 import type { Me } from "../lib/types";
 import { PROJECT_COLORS } from "../lib/types";
 import { Avatar } from "../components/bits";
+import { useI18n } from "../lib/i18n";
 
 /** الإعدادات — الملف الشخصي والمظهر */
 export default function Settings({ me }: { me: Me }) {
+  const { t } = useI18n();
   const [name, setName] = useState(me.name);
   const [color, setColor] = useState(me.avatarColor);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -18,7 +20,7 @@ export default function Settings({ me }: { me: Me }) {
     mutationFn: (body: Record<string, unknown>) => api("PATCH", "/api/auth/me", body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      setMsg({ text: "حُفظت التغييرات ✓", ok: true });
+      setMsg({ text: t("settings.saved"), ok: true });
       setTimeout(() => setMsg(null), 3000);
     },
     onError: (e: Error) => {
@@ -29,7 +31,7 @@ export default function Settings({ me }: { me: Me }) {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-4 font-display text-xl font-bold">الإعدادات</h1>
+      <h1 className="mb-4 font-display text-xl font-bold">{t("settings.title")}</h1>
 
       {msg && (
         <div
@@ -43,21 +45,21 @@ export default function Settings({ me }: { me: Me }) {
       )}
 
       <section className="mb-4 rounded-card border border-line bg-surface p-5">
-        <h2 className="mb-4 text-sm font-bold">الملف الشخصي</h2>
+        <h2 className="mb-4 text-sm font-bold">{t("settings.profile")}</h2>
         <div className="mb-4 flex items-center gap-3">
           <Avatar name={name || me.name} color={color} src={me.avatarUrl} size={12} />
           <div className="text-xs text-ink-3">
             <div className="font-semibold text-ink">{me.email}</div>
-            لون الصورة الرمزية يظهر لزملائك في المهام والتعليقات
+            {t("settings.avatarHint")}
           </div>
         </div>
-        <label className="mb-1 block text-xs font-bold text-ink-2">الاسم</label>
+        <label className="mb-1 block text-xs font-bold text-ink-2">{t("settings.name")}</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="mb-3 w-full rounded-field border border-line bg-paper px-3 py-2 text-sm focus:border-saffron focus:outline-none"
         />
-        <label className="mb-1 block text-xs font-bold text-ink-2">لون الصورة الرمزية</label>
+        <label className="mb-1 block text-xs font-bold text-ink-2">{t("settings.avatarColor")}</label>
         <div className="mb-4 flex flex-wrap gap-1.5">
           {PROJECT_COLORS.map((c) => (
             <button
@@ -74,20 +76,20 @@ export default function Settings({ me }: { me: Me }) {
           disabled={!name.trim() || save.isPending}
           className="rounded-field bg-accent px-4 py-1.5 text-xs font-bold text-paper hover:opacity-90 disabled:opacity-40"
         >
-          حفظ الملف الشخصي
+          {t("settings.saveProfile")}
         </button>
       </section>
 
       <section className="rounded-card border border-line bg-surface p-5">
-        <h2 className="mb-4 text-sm font-bold">تغيير كلمة المرور</h2>
-        <label className="mb-1 block text-xs font-bold text-ink-2">كلمة المرور الحالية</label>
+        <h2 className="mb-4 text-sm font-bold">{t("settings.password")}</h2>
+        <label className="mb-1 block text-xs font-bold text-ink-2">{t("settings.currentPassword")}</label>
         <input
           type="password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           className="mb-3 w-full rounded-field border border-line bg-paper px-3 py-2 text-sm focus:border-saffron focus:outline-none"
         />
-        <label className="mb-1 block text-xs font-bold text-ink-2">كلمة المرور الجديدة (٨ أحرف فأكثر)</label>
+        <label className="mb-1 block text-xs font-bold text-ink-2">{t("settings.newPasswordHint")}</label>
         <input
           type="password"
           value={password}
@@ -103,7 +105,7 @@ export default function Settings({ me }: { me: Me }) {
           disabled={password.length < 8 || !currentPassword || save.isPending}
           className="rounded-field bg-accent px-4 py-1.5 text-xs font-bold text-paper hover:opacity-90 disabled:opacity-40"
         >
-          تغيير كلمة المرور
+          {t("settings.changePassword")}
         </button>
       </section>
     </div>

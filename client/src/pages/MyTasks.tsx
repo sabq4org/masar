@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import { Calendar, LayoutGrid, List } from "lucide-react";
 import { api, queryClient } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import type { Me, MyTaskSection, TaskRow } from "../lib/types";
 import { Avatar, ErrorBar, Spinner } from "../components/bits";
 import TaskList, { type ListGroup } from "../components/TaskList";
@@ -13,6 +14,7 @@ type View = "list" | "board" | "calendar";
 
 /** مهامي — نموذج أسانا: أقسام شخصية + قائمة/لوحة/تقويم */
 export default function MyTasks() {
+  const { t } = useI18n();
   const [view, setView] = useState<View>(() => {
     try {
       return (localStorage.getItem("masar-my-view") as View) || "list";
@@ -168,9 +170,9 @@ export default function MyTasks() {
   });
 
   const VIEWS: { key: View; label: string; icon: typeof List }[] = [
-    { key: "list", label: "قائمة", icon: List },
-    { key: "board", label: "لوحة", icon: LayoutGrid },
-    { key: "calendar", label: "تقويم", icon: Calendar },
+    { key: "list", label: t("tasks.list"), icon: List },
+    { key: "board", label: t("tasks.board"), icon: LayoutGrid },
+    { key: "calendar", label: t("tasks.calendar"), icon: Calendar },
   ];
 
   if (!me) return <Spinner />;
@@ -193,7 +195,7 @@ export default function MyTasks() {
       {/* ─── الرأس ─── */}
       <div className="mb-1 flex items-center gap-3">
         <Avatar name={me.name} color={me.avatarColor} src={me.avatarUrl} size={9} />
-        <h1 className="font-display text-xl font-bold">مهامي</h1>
+        <h1 className="font-display text-xl font-bold">{t("tasks.myTasks")}</h1>
       </div>
       <div className="mb-3 flex items-center gap-1 border-b border-line">
         {VIEWS.map(({ key, label, icon: Icon }) => (
@@ -218,7 +220,7 @@ export default function MyTasks() {
             onChange={(e) => setShowCompleted(e.target.checked)}
             className="accent-[var(--masar-saffron)]"
           />
-          إظهار المكتملة
+          {t("tasks.showCompleted")}
         </label>
       </div>
 
