@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Clock, ListTodo } from "lucide-react";
-import type { Me, ProjectRow, TaskRow } from "../lib/types";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { AlertTriangle, CheckCircle2, Clock, ListTodo, Sparkles, X } from "lucide-react";
+import type { ApprovalRow, Me, ProjectRow, TaskRow } from "../lib/types";
 import { Avatar, DueBadge, StatusChip } from "../components/bits";
 import TaskSheet from "../components/TaskSheet";
 
@@ -18,8 +18,26 @@ export default function OverviewPage({ me }: { me: Me }) {
     queryKey: ["/api/reports/attention"],
   });
   const { data: projectsData } = useQuery<ProjectRow[] | null>({ queryKey: ["/api/projects"] });
+  const { data: pendingData } = useQuery<ApprovalRow[] | null>({
+    queryKey: ["/api/approvals/pending"],
+  });
   const projects = (Array.isArray(projectsData) ? projectsData : []).slice(0, 6);
+  const myApprovals = Array.isArray(pendingData) ? pendingData : [];
   const t = overview?.totals;
+
+  const [brief, setBrief] = useState<string | null>(null);
+  const [briefError, setBriefError] = useState<string | null>(null);
+  const canReports = me.permissions.includes("*") || me.permissions.includes("reports.view");
+  const dailyBrief = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/ai/daily-brief", { credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "تعذر توليد الملخص");
+      return data as { brief: string };
+    },
+    onSuccess: (d) => setBrief(d.brief),
+    onError: (e: Error) => setBriefError(e.message),
+  });
 
   const CARDS = [
     { label: "مهام مفتوحة", value: t?.open, icon: ListTodo, cls: "text-accent bg-accent-soft" },
@@ -30,8 +48,61 @@ export default function OverviewPage({ me }: { me: Me }) {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="mb-1 text-2xl font-extrabold">أهلًا، {me.name.split(" ")[0]} 👋</h1>
+      <div className="mb-1 flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold">أهلًا، {me.name.split(" ")[0]} 👋</h1>
+        {canReports && (
+          <button
+            onClick={() => { setBriefError(null); dailyBrief.mutate(); }}
+            disabled={dailyBrief.isPending}
+            className="flex items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-bold text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+          >
+            <Sparkles size={15} /> {dailyBrief.isPending ? "يُولّد…" : "الملخص اليومي"}
+          </button>
+        )}
+      </div>
       <p className="mb-6 text-sm text-ink-3">هذه نظرة عامة على غرفة الأخبار الآن</p>
+
+      {briefError && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
+          {briefError}
+        </div>
+      )}
+      {brief && (
+        <div className="mb-6 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-sm font-bold text-violet-800">
+              <Sparkles size={15} /> ملخص الصباح — بالذكاء الاصطناعي
+            </span>
+            <button onClick={() => setBrief(null)} className="text-ink-3 hover:text-ink"><X size={15} /></button>
+          </div>
+          <div className="whitespace-pre-wrap text-sm leading-relaxed">{brief}</div>
+        </div>
+      )}
+
+      {/* بانتظار اعتمادي */}
+      {myApprovals.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50/70">
+          <h2 className="border-b border-amber-200 px-4 py-2.5 text-sm font-bold text-amber-900">
+            بانتظار اعتمادك ({myApprovals.length})
+          </h2>
+          <div className="divide-y divide-amber-100">
+            {myApprovals.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => a.task && setOpenId(a.task.id)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-right hover:bg-amber-100/50"
+              >
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                  {a.task?.title}
+                </span>
+                <span className="text-xs text-ink-3 tabular-nums">
+                  {new Date(a.createdAt).toLocaleDateString("ar-SA", { day: "numeric", month: "short" })}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {CARDS.map(({ label, value, icon: Icon, cls }) => (

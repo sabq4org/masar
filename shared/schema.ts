@@ -6,11 +6,23 @@ import {
   integer,
   boolean,
   timestamp,
+  json,
   jsonb,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+// جدول جلسات connect-pg-simple — معرّف هنا حتى لا يعتبره drizzle جدولًا غريبًا
+export const session = pgTable(
+  "session",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire", { precision: 6 }).notNull(),
+  },
+  (t) => [index("IDX_session_expire").on(t.expire)],
+);
 
 // ─── المستخدمون والأقسام ───────────────────────────────────────────
 
@@ -205,6 +217,60 @@ export const taskActivity = pgTable(
   (t) => [index("activity_task_idx").on(t.taskId)],
 );
 
+// ─── الاعتماديات: المهمة محجوبة بمهمة أخرى ─────────────────────────
+
+export const taskDependencies = pgTable(
+  "task_dependencies",
+  {
+    id: serial("id").primaryKey(),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    blockedByTaskId: integer("blocked_by_task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("deps_task_blocker_idx").on(t.taskId, t.blockedByTaskId)],
+);
+
+// ─── الاعتمادات: طلب التعديل لا يغلق المهمة ────────────────────────
+
+export const taskApprovals = pgTable(
+  "task_approvals",
+  {
+    id: serial("id").primaryKey(),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    requestedById: integer("requested_by_id")
+      .notNull()
+      .references(() => users.id),
+    approverId: integer("approver_id")
+      .notNull()
+      .references(() => users.id),
+    state: varchar("state", { length: 20 }).notNull().default("pending"), // pending|approved|changes_requested|rejected
+    note: text("note"),
+    decisionNote: text("decision_note"),
+    decidedAt: timestamp("decided_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("approvals_approver_state_idx").on(t.approverId, t.state)],
+);
+
+// ─── قوالب المشاريع ────────────────────────────────────────────────
+
+export const projectTemplates = pgTable("project_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 20 }).notNull().default("ops"),
+  color: varchar("color", { length: 7 }).notNull().default("#2563B6"),
+  // { sections: [{ title, tasks: [{ title, priority }] }] }
+  structure: jsonb("structure").notNull(),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ─── الإشعارات ─────────────────────────────────────────────────────
 
 export const notifications = pgTable(
@@ -285,3 +351,12 @@ export type Task = typeof tasks.$inferSelect;
 export type Subtask = typeof subtasks.$inferSelect;
 export type TaskComment = typeof taskComments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type TaskApproval = typeof taskApprovals.$inferSelect;
+export type ProjectTemplate = typeof projectTemplates.$inferSelect;
+
+export interface TemplateStructure {
+  sections: Array<{
+    title: string;
+    tasks: Array<{ title: string; priority?: string; description?: string }>;
+  }>;
+}

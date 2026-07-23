@@ -9,7 +9,20 @@ import { registerTaskRoutes } from "./routes/tasks";
 import { registerNotificationRoutes } from "./routes/notifications";
 import { registerUserAdminRoutes } from "./routes/users";
 import { registerReportRoutes } from "./routes/reports";
+import { registerApprovalRoutes } from "./routes/approvals";
+import { registerTemplateRoutes } from "./routes/templates";
+import { registerStreamRoutes } from "./routes/stream";
+import { registerAiRoutes } from "./routes/ai";
+import { startJobs } from "./jobs";
 import { pool } from "./db";
+
+// حارس عملية: سجّل ولا تُسقط الخادم (الأخطاء المعالجة تمر عبر معالج Express)
+process.on("unhandledRejection", (reason) =>
+  console.error("[masar] unhandledRejection:", reason),
+);
+process.on("uncaughtException", (err) =>
+  console.error("[masar] uncaughtException:", err),
+);
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
@@ -22,6 +35,11 @@ registerTaskRoutes(app);
 registerNotificationRoutes(app);
 registerUserAdminRoutes(app);
 registerReportRoutes(app);
+registerApprovalRoutes(app);
+registerTemplateRoutes(app);
+registerStreamRoutes(app);
+registerAiRoutes(app);
+startJobs();
 
 app.get("/health", async (_req, res) => {
   try {
@@ -37,8 +55,9 @@ if (process.env.NODE_ENV === "production") {
   const dirname = path.dirname(fileURLToPath(import.meta.url));
   const publicDir = path.resolve(dirname, "../dist/public");
   app.use(express.static(publicDir));
-  app.get("*", (req, res) => {
-    if (req.path.startsWith("/api")) return res.status(404).json({ error: "غير موجود" });
+  // Express 5: بدل نمط "*" — fallback وسيط لكل ما ليس API
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api")) return next();
     res.sendFile(path.join(publicDir, "index.html"));
   });
 }

@@ -2,15 +2,19 @@ import type { Express } from "express";
 import { z } from "zod";
 import { and, asc, desc, eq, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
 import { db } from "../db";
+import { alias } from "drizzle-orm/pg-core";
 import {
   tasks,
   subtasks,
   taskComments,
   taskWatchers,
   taskActivity,
+  taskDependencies,
+  taskApprovals,
   users,
   statuses,
 } from "../../shared/schema";
+import { broadcast } from "../services/events";
 import { requireAuth, requirePermission, getSessionUser } from "../auth";
 import { PERMISSIONS, roleHas } from "../permissions";
 import {
@@ -116,12 +120,14 @@ export function registerTaskRoutes(app: Express) {
       );
       await logActivity(task.id, user.id, "assigned", { assigneeId: task.assigneeId });
     }
+    broadcast({ type: "tasks", taskId: task.id, projectId: task.projectId ?? undefined });
     res.status(201).json(task);
   });
 
   // ─── تفاصيل مهمة ───
-  app.get("/api/tasks/:id", requireAuth, async (req, res) => {
+  app.get("/api/tasks/:id", requireAuth, async (req, res, next) => {
     const id = Number(req.params.id);
+    if (!Number.isInteger(id)) return next(); // يمرر مثل /api/tasks/export.csv لمساره
     const task = await db.query.tasks.findFirst({
       where: eq(tasks.id, id),
       with: {
@@ -145,7 +151,69 @@ export function registerTaskRoutes(app: Express) {
     });
     if (!task) return res.status(404).json({ error: "المهمة غير موجودة" });
     const nextStatuses = await allowedNextStatuses(task.statusId);
-    res.json({ ...task, nextStatuses });
+
+    // العوائق: مهام تحجب هذه المهمة، مع حالتها
+    const blockers = alias(tasks, "blockers");
+    const dependencies = await db
+      .select({
+        id: taskDependencies.id,
+        blockedByTaskId: taskDependencies.blockedByTaskId,
+        title: blockers.title,
+        statusId: blockers.statusId,
+      })
+      .from(taskDependencies)
+      .innerJoin(blockers, eq(taskDependencies.blockedByTaskId, blockers.id))
+      .where(eq(taskDependencies.taskId, id));
+
+    const approvals = await db
+      .select()
+      .from(taskApprovals)
+      .where(eq(taskApprovals.taskId, id))
+      .orderBy(desc(taskApprovals.createdAt));
+
+    res.json({ ...task, nextStatuses, dependencies, approvals });
+  });
+
+  // ─── الاعتماديات ───
+  app.post("/api/tasks/:id/dependencies", requireAuth, async (req, res) => {
+    const taskId = Number(req.params.id);
+    const user = await getSessionUser(req);
+    const parsed = z.object({ blockedByTaskId: z.number().int() }).safeParse(req.body);
+    if (!parsed.success || parsed.data.blockedByTaskId === taskId)
+      return res.status(400).json({ error: "بيانات غير صالحة" });
+    // منع الحلقة المباشرة (أ يحجب ب وب يحجب أ)
+    const [reverse] = await db
+      .select()
+      .from(taskDependencies)
+      .where(
+        and(
+          eq(taskDependencies.taskId, parsed.data.blockedByTaskId),
+          eq(taskDependencies.blockedByTaskId, taskId),
+        ),
+      );
+    if (reverse) return res.status(422).json({ error: "هذا يُنشئ حلقة اعتماد دائرية" });
+    await db
+      .insert(taskDependencies)
+      .values({ taskId, blockedByTaskId: parsed.data.blockedByTaskId })
+      .onConflictDoNothing();
+    await logActivity(taskId, user?.id ?? null, "dependency_added", {
+      blockedBy: parsed.data.blockedByTaskId,
+    });
+    broadcast({ type: "tasks", taskId });
+    res.status(201).json({ ok: true });
+  });
+
+  app.delete("/api/tasks/:id/dependencies/:depId", requireAuth, async (req, res) => {
+    await db
+      .delete(taskDependencies)
+      .where(
+        and(
+          eq(taskDependencies.id, Number(req.params.depId)),
+          eq(taskDependencies.taskId, Number(req.params.id)),
+        ),
+      );
+    broadcast({ type: "tasks", taskId: Number(req.params.id) });
+    res.json({ ok: true });
   });
 
   // ─── تعديل مهمة ───
@@ -191,6 +259,7 @@ export function registerTaskRoutes(app: Express) {
       );
       await logActivity(id, user.id, "assigned", { assigneeId: fields.assigneeId });
     }
+    broadcast({ type: "tasks", taskId: id, projectId: updated.projectId ?? undefined });
     res.json(updated);
   });
 

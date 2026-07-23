@@ -13,13 +13,16 @@ import {
   LogOut,
 } from "lucide-react";
 import clsx from "clsx";
+import { LayoutTemplate } from "lucide-react";
 import type { Me } from "../lib/types";
 import { api, queryClient } from "../lib/api";
+import { useLive } from "../lib/useLive";
 
 const NAV = [
   { href: "/", label: "نظرة عامة", icon: LayoutDashboard },
   { href: "/my", label: "مهامي", icon: ListTodo },
   { href: "/projects", label: "المشاريع", icon: FolderKanban },
+  { href: "/templates", label: "القوالب", icon: LayoutTemplate, perm: "projects.manage" },
   { href: "/teams", label: "الفرق", icon: Users },
   { href: "/calendar", label: "التقويم", icon: CalendarDays },
   { href: "/reports", label: "التقارير", icon: BarChart3, perm: "reports.view" },
@@ -33,6 +36,7 @@ const ADMIN_NAV = [
 
 export default function Layout({ me, children }: { me: Me; children: React.ReactNode }) {
   const [location] = useLocation();
+  useLive();
   const { data: notif } = useQuery<{ unread: number } | null>({
     queryKey: ["/api/notifications"],
     refetchInterval: 30_000,

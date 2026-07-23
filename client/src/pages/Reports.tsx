@@ -17,7 +17,16 @@ export default function Reports() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="mb-1 text-2xl font-extrabold">التقارير</h1>
+      <div className="mb-1 flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold">التقارير</h1>
+        <a
+          href="/api/tasks/export.csv"
+          download
+          className="rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-line-soft"
+        >
+          ⬇ تصدير CSV
+        </a>
+      </div>
       <p className="mb-6 text-sm text-ink-3">
         الأرقام مؤشرات سياقية وليست تقييمًا للأفراد — تُقرأ مع نوع المهام وتعقيدها
       </p>

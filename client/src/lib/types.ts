@@ -69,7 +69,32 @@ export interface TaskRow {
   project?: { id: number; name: string; color: string } | null;
 }
 
+export interface ApprovalRow {
+  id: number;
+  taskId: number;
+  requestedById: number;
+  approverId: number;
+  state: "pending" | "approved" | "changes_requested" | "rejected";
+  note: string | null;
+  decisionNote: string | null;
+  decidedAt: string | null;
+  createdAt: string;
+  task?: TaskRow;
+}
+
+export interface TemplateRow {
+  id: number;
+  name: string;
+  description: string | null;
+  type: string;
+  color: string;
+  structure: { sections: { title: string; tasks: { title: string }[] }[] };
+  createdAt: string;
+}
+
 export interface TaskDetail extends TaskRow {
+  dependencies: { id: number; blockedByTaskId: number; title: string; statusId: number }[];
+  approvals: ApprovalRow[];
   createdBy?: { id: number; name: string } | null;
   subtasks: { id: number; title: string; isDone: boolean }[];
   comments: {

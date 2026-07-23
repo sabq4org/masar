@@ -4,12 +4,14 @@ import {
   tasks,
   taskActivity,
   taskWatchers,
+  taskDependencies,
   notifications,
   statuses,
   statusTransitions,
   type Task,
   type User,
 } from "../../shared/schema";
+import { broadcast } from "./events";
 
 export async function logActivity(
   taskId: number,
@@ -33,6 +35,7 @@ export async function notify(
   await db
     .insert(notifications)
     .values(targets.map((userId) => ({ userId, type, title, body, taskId })));
+  broadcast({ type: "notifications" });
 }
 
 /** المسؤول + المشاركون — جمهور إشعارات المهمة */
@@ -101,6 +104,32 @@ export async function changeStatus(task: Task, toStatusId: number, actor: User) 
     task.id,
     actor.id,
   );
+
+  // اكتمال مهمة حاجبة → أشعر مسؤولي المهام المحجوبة بها
+  if (done || to.category === "closed") {
+    const dependents = await db
+      .select({ taskId: taskDependencies.taskId })
+      .from(taskDependencies)
+      .where(eq(taskDependencies.blockedByTaskId, task.id));
+    if (dependents.length) {
+      const blockedTasks = await db
+        .select()
+        .from(tasks)
+        .where(inArray(tasks.id, dependents.map((d) => d.taskId)));
+      for (const bt of blockedTasks) {
+        if (bt.assigneeId)
+          await notify(
+            [bt.assigneeId],
+            "blocker_done",
+            `انفتح الطريق لمهمتك «${bt.title}»`,
+            `اكتملت المهمة الحاجبة: «${task.title}»`,
+            bt.id,
+          );
+      }
+    }
+  }
+
+  broadcast({ type: "tasks", taskId: task.id, projectId: updated.projectId ?? undefined });
   return updated;
 }
 

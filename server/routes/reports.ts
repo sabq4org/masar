@@ -87,6 +87,39 @@ export function registerReportRoutes(app: Express) {
     });
   });
 
+  // تصدير CSV (بترويسة UTF-8 BOM ليقرأه Excel بالعربية)
+  app.get("/api/tasks/export.csv", requireAuth, async (_req, res) => {
+    const allStatuses = await db.select().from(statuses);
+    const allUsers = await db.select({ id: users.id, name: users.name }).from(users);
+    const allDeps = await db.select().from(departments);
+    const list = await db.query.tasks.findMany({
+      where: eq(tasks.isArchived, false),
+      with: { project: { columns: { name: true } } },
+      limit: 5000,
+    });
+    const esc = (v: unknown) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+    const header = ["المعرف", "العنوان", "الحالة", "الأولوية", "المسؤول", "الفريق", "المشروع", "الاستحقاق", "أُنشئت"];
+    const rows = list.map((t) =>
+      [
+        t.id,
+        t.title,
+        allStatuses.find((s) => s.id === t.statusId)?.nameAr ?? "",
+        t.priority,
+        allUsers.find((u) => u.id === t.assigneeId)?.name ?? "",
+        allDeps.find((d) => d.id === t.departmentId)?.nameAr ?? "",
+        (t as any).project?.name ?? "",
+        t.dueAt ? t.dueAt.toISOString().slice(0, 16).replace("T", " ") : "",
+        t.createdAt.toISOString().slice(0, 10),
+      ]
+        .map(esc)
+        .join(","),
+    );
+    const csv = "﻿" + [header.map(esc).join(","), ...rows].join("\r\n");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", "attachment; filename=masar-tasks.csv");
+    res.send(csv);
+  });
+
   // مهام تحتاج انتباهًا: متأخرة أو بانتظار الاعتماد
   app.get("/api/reports/attention", requireAuth, async (_req, res) => {
     const allStatuses = await db.select().from(statuses);

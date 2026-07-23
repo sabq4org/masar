@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   DndContext,
@@ -10,13 +10,16 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, Search, LayoutGrid, List, GanttChartSquare, BookmarkPlus } from "lucide-react";
 import { Link } from "wouter";
 import clsx from "clsx";
 import { api, queryClient } from "../lib/api";
-import type { ProjectRow, StatusRow, TaskRow } from "../lib/types";
-import { Avatar, DueBadge, PriorityChip } from "../components/bits";
+import type { Me, ProjectRow, StatusRow, TaskRow, UserLite } from "../lib/types";
+import { Avatar, DueBadge, PriorityChip, StatusChip } from "../components/bits";
 import TaskSheet from "../components/TaskSheet";
+import Timeline from "../components/Timeline";
+
+type ViewMode = "board" | "list" | "timeline";
 
 export default function ProjectBoard({ id }: { id: number }) {
   const [openId, setOpenId] = useState<number | null>(null);
@@ -24,23 +27,48 @@ export default function ProjectBoard({ id }: { id: number }) {
   const [error, setError] = useState<string | null>(null);
   const [addingIn, setAddingIn] = useState<number | null>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [view, setView] = useState<ViewMode>("board");
+  const [q, setQ] = useState("");
+  const [filterAssignee, setFilterAssignee] = useState<number | "">("");
+  const [filterPriority, setFilterPriority] = useState("");
 
+  const { data: me } = useQuery<Me | null>({ queryKey: ["/api/auth/me"] });
   const { data: project } = useQuery<ProjectRow | null>({ queryKey: [`/api/projects/${id}`] });
   const { data: statusesData } = useQuery<StatusRow[] | null>({ queryKey: ["/api/statuses"] });
+  const { data: usersData } = useQuery<UserLite[] | null>({ queryKey: ["/api/users"] });
   const tasksKey = `/api/tasks?projectId=${id}&roots=1`;
   const { data: tasksData } = useQuery<TaskRow[] | null>({ queryKey: [tasksKey] });
 
   const statuses = Array.isArray(statusesData) ? statusesData : [];
-  const tasks = Array.isArray(tasksData) ? tasksData : [];
+  const users = Array.isArray(usersData) ? usersData : [];
+  const allTasks = Array.isArray(tasksData) ? tasksData : [];
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  const canManage =
+    me && (me.permissions.includes("*") || me.permissions.includes("projects.manage"));
+
+  const tasks = useMemo(
+    () =>
+      allTasks.filter((t) => {
+        if (q && !t.title.includes(q)) return false;
+        if (filterAssignee !== "" && t.assigneeId !== filterAssignee) return false;
+        if (filterPriority && t.priority !== filterPriority) return false;
+        return true;
+      }),
+    [allTasks, q, filterAssignee, filterPriority],
+  );
+
+  function showError(msg: string) {
+    setError(msg);
+    setTimeout(() => setError(null), 4000);
+  }
 
   const changeStatus = useMutation({
     mutationFn: ({ taskId, statusId }: { taskId: number; statusId: number }) =>
       api("POST", `/api/tasks/${taskId}/status`, { statusId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [tasksKey] }),
     onError: (e: Error) => {
-      setError(e.message);
-      setTimeout(() => setError(null), 4000);
+      showError(e.message);
       queryClient.invalidateQueries({ queryKey: [tasksKey] });
     },
   });
@@ -53,10 +81,13 @@ export default function ProjectBoard({ id }: { id: number }) {
       setAddingIn(null);
       queryClient.invalidateQueries({ queryKey: [tasksKey] });
     },
-    onError: (e: Error) => {
-      setError(e.message);
-      setTimeout(() => setError(null), 4000);
-    },
+    onError: (e: Error) => showError(e.message),
+  });
+
+  const saveTemplate = useMutation({
+    mutationFn: (name: string) => api("POST", `/api/projects/${id}/save-template`, { name }),
+    onSuccess: () => showError("حُفظ القالب بنجاح — تجده في صفحة القوالب ✓"),
+    onError: (e: Error) => showError(e.message),
   });
 
   function onDragEnd(e: DragEndEvent) {
@@ -70,47 +101,161 @@ export default function ProjectBoard({ id }: { id: number }) {
     changeStatus.mutate({ taskId, statusId });
   }
 
+  const VIEWS: { key: ViewMode; label: string; icon: typeof List }[] = [
+    { key: "board", label: "كانبان", icon: LayoutGrid },
+    { key: "list", label: "قائمة", icon: List },
+    { key: "timeline", label: "خط زمني", icon: GanttChartSquare },
+  ];
+
   return (
     <div>
-      <div className="mb-4 flex items-center gap-3">
-        <Link href="/projects" className="text-ink-3 hover:text-accent">
-          <ArrowRight size={20} />
-        </Link>
+      <div className="mb-3 flex items-center gap-3">
+        <Link href="/projects" className="text-ink-3 hover:text-accent"><ArrowRight size={20} /></Link>
         <span className="h-3.5 w-3.5 rounded-full" style={{ background: project?.color }} />
-        <h1 className="text-2xl font-extrabold">{project?.name ?? "…"}</h1>
+        <h1 className="flex-1 text-2xl font-extrabold">{project?.name ?? "…"}</h1>
+        {canManage && (
+          <button
+            onClick={() => {
+              const name = prompt("اسم القالب:", `قالب — ${project?.name ?? ""}`);
+              if (name?.trim()) saveTemplate.mutate(name.trim());
+            }}
+            className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:bg-line-soft"
+          >
+            <BookmarkPlus size={15} /> حفظ كقالب
+          </button>
+        )}
+      </div>
+
+      {/* شريط العروض والفلاتر */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="flex rounded-lg border border-line bg-white p-0.5">
+          {VIEWS.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setView(key)}
+              className={clsx(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold",
+                view === key ? "bg-accent-soft text-accent-ink" : "text-ink-3 hover:text-ink",
+              )}
+            >
+              <Icon size={15} /> {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1.5">
+          <Search size={14} className="text-ink-3" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="بحث…"
+            className="w-32 bg-transparent text-sm focus:outline-none"
+          />
+        </div>
+        <select
+          value={filterAssignee}
+          onChange={(e) => setFilterAssignee(e.target.value ? Number(e.target.value) : "")}
+          className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-sm"
+        >
+          <option value="">كل المسؤولين</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>{u.name}</option>
+          ))}
+        </select>
+        <select
+          value={filterPriority}
+          onChange={(e) => setFilterPriority(e.target.value)}
+          className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-sm"
+        >
+          <option value="">كل الأولويات</option>
+          <option value="urgent">عاجلة</option>
+          <option value="high">عالية</option>
+          <option value="normal">عادية</option>
+          <option value="low">منخفضة</option>
+        </select>
+        {(q || filterAssignee !== "" || filterPriority) && (
+          <button
+            onClick={() => { setQ(""); setFilterAssignee(""); setFilterPriority(""); }}
+            className="text-xs font-semibold text-accent hover:underline"
+          >
+            مسح الفلاتر ({tasks.length}/{allTasks.length})
+          </button>
+        )}
       </div>
 
       {error && (
-        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
+        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
           {error}
         </div>
       )}
 
-      <DndContext
-        sensors={sensors}
-        onDragStart={(e) => setDragTask(tasks.find((t) => t.id === Number(e.active.id)) ?? null)}
-        onDragEnd={onDragEnd}
-      >
-        <div className="flex gap-3 overflow-x-auto pb-4">
-          {statuses.map((s) => (
-            <Column
-              key={s.id}
-              status={s}
-              tasks={tasks.filter((t) => t.statusId === s.id)}
-              onOpen={setOpenId}
-              adding={addingIn === s.id}
-              newTitle={newTitle}
-              setNewTitle={setNewTitle}
-              onStartAdd={() => setAddingIn(s.id)}
-              onSubmitAdd={() => {
-                if (newTitle.trim()) addTask.mutate({ title: newTitle.trim(), statusId: s.id });
-                else setAddingIn(null);
-              }}
-            />
-          ))}
+      {view === "board" && (
+        <DndContext
+          sensors={sensors}
+          onDragStart={(e) => setDragTask(tasks.find((t) => t.id === Number(e.active.id)) ?? null)}
+          onDragEnd={onDragEnd}
+        >
+          <div className="flex gap-3 overflow-x-auto pb-4">
+            {statuses.map((s) => (
+              <Column
+                key={s.id}
+                status={s}
+                tasks={tasks.filter((t) => t.statusId === s.id)}
+                onOpen={setOpenId}
+                adding={addingIn === s.id}
+                newTitle={newTitle}
+                setNewTitle={setNewTitle}
+                onStartAdd={() => setAddingIn(s.id)}
+                onSubmitAdd={() => {
+                  if (newTitle.trim()) addTask.mutate({ title: newTitle.trim(), statusId: s.id });
+                  else setAddingIn(null);
+                }}
+              />
+            ))}
+          </div>
+          <DragOverlay>{dragTask && <Card task={dragTask} overlay />}</DragOverlay>
+        </DndContext>
+      )}
+
+      {view === "list" && (
+        <div className="overflow-x-auto rounded-xl border border-line bg-white">
+          <table className="w-full min-w-[700px] text-sm">
+            <thead>
+              <tr className="border-b border-line bg-line-soft/60 text-right text-xs text-ink-2">
+                <th className="px-4 py-2.5 font-bold">المهمة</th>
+                <th className="px-4 py-2.5 font-bold">الحالة</th>
+                <th className="px-4 py-2.5 font-bold">الأولوية</th>
+                <th className="px-4 py-2.5 font-bold">المسؤول</th>
+                <th className="px-4 py-2.5 font-bold">الاستحقاق</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line-soft">
+              {tasks.map((t) => (
+                <tr key={t.id} onClick={() => setOpenId(t.id)} className="cursor-pointer hover:bg-line-soft/50">
+                  <td className="px-4 py-2.5 font-semibold">{t.title}</td>
+                  <td className="px-4 py-2.5"><StatusChip status={t.status} /></td>
+                  <td className="px-4 py-2.5"><PriorityChip priority={t.priority} /></td>
+                  <td className="px-4 py-2.5">
+                    {t.assignee ? (
+                      <span className="flex items-center gap-1.5">
+                        <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={6} />
+                        <span className="text-xs">{t.assignee.name}</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-ink-3">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5"><DueBadge task={t} /></td>
+                </tr>
+              ))}
+              {tasks.length === 0 && (
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-3">لا مهام مطابقة</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
-        <DragOverlay>{dragTask && <Card task={dragTask} overlay />}</DragOverlay>
-      </DndContext>
+      )}
+
+      {view === "timeline" && <Timeline tasks={tasks} onOpen={setOpenId} />}
 
       {openId && <TaskSheet taskId={openId} onClose={() => setOpenId(null)} />}
     </div>
@@ -118,14 +263,7 @@ export default function ProjectBoard({ id }: { id: number }) {
 }
 
 function Column({
-  status,
-  tasks,
-  onOpen,
-  adding,
-  newTitle,
-  setNewTitle,
-  onStartAdd,
-  onSubmitAdd,
+  status, tasks, onOpen, adding, newTitle, setNewTitle, onStartAdd, onSubmitAdd,
 }: {
   status: StatusRow;
   tasks: TaskRow[];
@@ -147,22 +285,12 @@ function Column({
     >
       <div className="mb-2 flex items-center gap-2 px-1.5 py-1">
         <span className="h-2 w-2 rounded-full" style={{ background: status.color }} />
-        <span className="flex-1 text-sm font-bold" style={{ color: status.color }}>
-          {status.nameAr}
-        </span>
+        <span className="flex-1 text-sm font-bold" style={{ color: status.color }}>{status.nameAr}</span>
         <span className="text-xs tabular-nums text-ink-3">{tasks.length}</span>
-        <button onClick={onStartAdd} className="text-ink-3 hover:text-accent" title="إضافة">
-          <Plus size={15} />
-        </button>
+        <button onClick={onStartAdd} className="text-ink-3 hover:text-accent" title="إضافة"><Plus size={15} /></button>
       </div>
       {adding && (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSubmitAdd();
-          }}
-          className="mb-2"
-        >
+        <form onSubmit={(e) => { e.preventDefault(); onSubmitAdd(); }} className="mb-2">
           <input
             autoFocus
             value={newTitle}

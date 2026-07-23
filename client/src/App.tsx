@@ -13,6 +13,7 @@ import Reports from "./pages/Reports";
 import Inbox from "./pages/Inbox";
 import UsersAdmin from "./pages/UsersAdmin";
 import Settings from "./pages/Settings";
+import Templates from "./pages/Templates";
 
 function can(me: Me, perm: string) {
   return me.permissions.includes("*") || me.permissions.includes(perm);
@@ -38,6 +39,9 @@ export default function App() {
         <Route path="/projects" component={Projects} />
         <Route path="/projects/:id">{(params) => <ProjectBoard id={Number(params.id)} />}</Route>
         <Route path="/teams" component={Teams} />
+        <Route path="/templates">
+          {can(me, "projects.manage") ? <Templates /> : <Redirect to="/" />}
+        </Route>
         <Route path="/calendar" component={CalendarPage} />
         <Route path="/reports">
           {can(me, "reports.view") ? <Reports /> : <Redirect to="/" />}
