@@ -110,6 +110,10 @@ export interface TaskRow {
   project?: { id: number; name: string; color: string } | null;
   section?: { id: number; title: string } | null;
   subtasks?: { id: number; isCompleted: boolean }[];
+  watchers?: {
+    userId: number;
+    user: { id: number; name: string; avatarColor: string; avatarUrl?: string | null };
+  }[];
 }
 
 export interface SubtaskRow extends TaskRow {

@@ -121,6 +121,38 @@ export function ProjectDot({ color, size = 8 }: { color: string; size?: number }
   );
 }
 
+/** كومة صور المتعاونين بجانب صف المهمة */
+export function CollaboratorStack({
+  people,
+  max = 3,
+  size = 5,
+}: {
+  people: { id: number; name: string; avatarColor: string; avatarUrl?: string | null }[];
+  max?: number;
+  size?: number;
+}) {
+  if (!people.length) return null;
+  const shown = people.slice(0, max);
+  const extra = people.length - shown.length;
+  return (
+    <span className="flex flex-none -space-x-1.5 space-x-reverse" title={people.map((p) => p.name).join(" · ")}>
+      {shown.map((p) => (
+        <Avatar key={p.id} name={p.name} color={p.avatarColor} src={p.avatarUrl} size={size} />
+      ))}
+      {extra > 0 && (
+        <span
+          className={clsx(
+            "flex flex-none items-center justify-center rounded-chip bg-line-soft font-bold text-ink-3",
+            size === 5 ? "h-5 w-5 text-[9px]" : "h-6 w-6 text-[10px]",
+          )}
+        >
+          +{extra}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function MilestoneIcon({ size = 14 }: { size?: number }) {
   return <Diamond size={size} className="flex-none text-review" fill="currentColor" />;
 }

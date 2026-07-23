@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { Check, ChevronLeft, Plus, Users } from "lucide-react";
 import type { Me, ProjectRow, TaskRow, UserLite } from "../lib/types";
 import { greeting, todayLine } from "../lib/dates";
-import { Avatar, CheckCircle, DueText, ProjectDot, Spinner } from "../components/bits";
+import { Avatar, CheckCircle, CollaboratorStack, DueText, ProjectDot, Spinner } from "../components/bits";
 import { NewProjectModal } from "../components/Layout";
 import { useTaskPane } from "../lib/taskPane";
 import { api, queryClient } from "../lib/api";
@@ -121,6 +121,11 @@ export default function Home({ me }: { me: Me }) {
                 <span className={clsx("min-w-0 flex-1 truncate font-semibold", t.isCompleted && "text-ink-3")}>
                   {t.title}
                 </span>
+                <CollaboratorStack
+                  people={(t.watchers ?? []).map((w) => w.user)}
+                  max={3}
+                  size={5}
+                />
                 {t.project && (
                   <span className="hidden max-w-32 flex-none items-center gap-1 truncate text-[11px] text-ink-3 sm:flex">
                     <ProjectDot color={t.project.color} size={7} />
