@@ -6,11 +6,13 @@ import { setupSession, registerAuthRoutes } from "./auth";
 import { registerMetaRoutes } from "./routes/meta";
 import { registerProjectRoutes } from "./routes/projects";
 import { registerTaskRoutes } from "./routes/tasks";
+import { registerMyTasksRoutes } from "./routes/mytasks";
 import { registerNotificationRoutes } from "./routes/notifications";
 import { registerUserAdminRoutes } from "./routes/users";
 import { registerReportRoutes } from "./routes/reports";
-import { registerApprovalRoutes } from "./routes/approvals";
 import { registerTemplateRoutes } from "./routes/templates";
+import { registerSearchRoutes } from "./routes/search";
+import { registerAttachmentRoutes } from "./routes/attachments";
 import { registerStreamRoutes } from "./routes/stream";
 import { registerAiRoutes } from "./routes/ai";
 import { startJobs } from "./jobs";
@@ -32,11 +34,13 @@ registerAuthRoutes(app);
 registerMetaRoutes(app);
 registerProjectRoutes(app);
 registerTaskRoutes(app);
+registerMyTasksRoutes(app);
 registerNotificationRoutes(app);
 registerUserAdminRoutes(app);
 registerReportRoutes(app);
-registerApprovalRoutes(app);
 registerTemplateRoutes(app);
+registerSearchRoutes(app);
+registerAttachmentRoutes(app);
 registerStreamRoutes(app);
 registerAiRoutes(app);
 startJobs();
@@ -57,7 +61,8 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(publicDir));
   // Express 5: بدل نمط "*" — fallback وسيط لكل ما ليس API
   app.use((req, res, next) => {
-    if (req.method !== "GET" || req.path.startsWith("/api")) return next();
+    if (req.method !== "GET" || req.path.startsWith("/api") || req.path.startsWith("/uploads"))
+      return next();
     res.sendFile(path.join(publicDir, "index.html"));
   });
 }

@@ -2,48 +2,7 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db, pool } from "./db";
-import { departments, statuses, statusTransitions, users } from "../shared/schema";
-
-// الحالات الثلاث عشرة — ألوان خطة «مسار» §9
-const STATUSES: Array<{
-  key: string;
-  nameAr: string;
-  color: string;
-  category: string;
-  isDefault?: boolean;
-}> = [
-  { key: "idea", nameAr: "فكرة", color: "#77705F", category: "planning", isDefault: true },
-  { key: "awaiting_assignment", nameAr: "بانتظار التكليف", color: "#46536B", category: "planning" },
-  { key: "assigned", nameAr: "مكلّفة", color: "#C98A3B", category: "active" },
-  { key: "in_progress", nameAr: "قيد العمل", color: "#C2701E", category: "active" },
-  { key: "awaiting_info", nameAr: "بانتظار المعلومات", color: "#A87A0E", category: "blocked" },
-  { key: "editing", nameAr: "قيد التحرير", color: "#4A7CA5", category: "review" },
-  { key: "proofreading", nameAr: "قيد التدقيق", color: "#33658A", category: "review" },
-  { key: "awaiting_approval", nameAr: "بانتظار الاعتماد", color: "#274E6D", category: "review" },
-  { key: "ready", nameAr: "جاهزة للنشر", color: "#55917A", category: "active" },
-  { key: "scheduled", nameAr: "مجدولة", color: "#3F8A69", category: "active" },
-  { key: "published", nameAr: "منشورة", color: "#2E7D5B", category: "done" },
-  { key: "deferred", nameAr: "مؤجلة", color: "#8C7347", category: "closed" },
-  { key: "cancelled", nameAr: "ملغاة", color: "#B0413E", category: "closed" },
-];
-
-// الانتقالات المسموحة (المغلقة مسموحة من أي حالة عبر منطق الخدمة)
-const TRANSITIONS: Array<[string, string]> = [
-  ["idea", "awaiting_assignment"],
-  ["awaiting_assignment", "assigned"],
-  ["assigned", "in_progress"],
-  ["in_progress", "awaiting_info"],
-  ["awaiting_info", "in_progress"],
-  ["in_progress", "editing"],
-  ["editing", "proofreading"],
-  ["proofreading", "awaiting_approval"],
-  ["proofreading", "editing"], // طلب تعديل من التدقيق
-  ["awaiting_approval", "ready"], // اعتماد
-  ["awaiting_approval", "editing"], // طلب تعديل — لا يغلق شيئًا
-  ["ready", "scheduled"],
-  ["ready", "published"],
-  ["scheduled", "published"],
-];
+import { departments, users, userTaskSections } from "../shared/schema";
 
 const DEPARTMENTS: Array<{ nameAr: string; color: string; sortOrder: number }> = [
   { nameAr: "الأخبار", color: "#33658A", sortOrder: 1 },
@@ -62,58 +21,55 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@masar.local";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 
 async function main() {
-  if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 10) {
+  if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8) {
     console.error(
-      "عيّن ADMIN_PASSWORD في .env (١٠ أحرف فأكثر) قبل الزرع.\n" +
+      "عيّن ADMIN_PASSWORD في .env (٨ أحرف فأكثر) قبل الزرع.\n" +
         "مثال: ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='…' npm run seed",
     );
     process.exit(1);
   }
 
-  console.log("زرع الحالات…");
-  for (const [i, s] of STATUSES.entries()) {
-    await db
-      .insert(statuses)
-      .values({ ...s, orderIndex: i, isSystem: true, isDefault: s.isDefault ?? false })
-      .onConflictDoUpdate({
-        target: statuses.key,
-        set: { nameAr: s.nameAr, color: s.color, category: s.category, orderIndex: i },
-      });
-  }
-
-  const allStatuses = await db.select().from(statuses);
-  const byKey = new Map(allStatuses.map((s) => [s.key, s.id]));
-
-  console.log("زرع الانتقالات…");
-  for (const [from, to] of TRANSITIONS) {
-    const fromId = byKey.get(from);
-    const toId = byKey.get(to);
-    if (!fromId || !toId) continue;
-    await db
-      .insert(statusTransitions)
-      .values({ fromStatusId: fromId, toStatusId: toId })
-      .onConflictDoNothing();
-  }
-
-  console.log("زرع الأقسام…");
+  console.log("زرع الفرق…");
   for (const d of DEPARTMENTS) {
     await db.insert(departments).values(d).onConflictDoNothing();
   }
 
   console.log("إنشاء حساب المدير…");
   const [existing] = await db.select().from(users).where(eq(users.email, ADMIN_EMAIL));
+  let adminId = existing?.id;
   if (!existing) {
     const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
-    await db.insert(users).values({
-      email: ADMIN_EMAIL,
-      passwordHash,
-      name: "علي الحازمي",
-      role: "admin",
-      avatarColor: "#1F6FB2",
-    });
+    const [admin] = await db
+      .insert(users)
+      .values({
+        email: ADMIN_EMAIL,
+        passwordHash,
+        name: "علي الحازمي",
+        role: "admin",
+        avatarColor: "#1F6FB2",
+      })
+      .returning();
+    adminId = admin.id;
     console.log(`✔ حساب المدير: ${ADMIN_EMAIL} (غيّر كلمة المرور بعد أول دخول)`);
   } else {
     console.log("حساب المدير موجود مسبقًا — لم يتغير شيء");
+  }
+
+  // أقسام «مهامي» الافتراضية للمدير (تُنشأ لبقية المستخدمين عند أول دخول)
+  if (adminId) {
+    const sections = await db
+      .select()
+      .from(userTaskSections)
+      .where(eq(userTaskSections.userId, adminId));
+    if (!sections.length) {
+      await db.insert(userTaskSections).values([
+        { userId: adminId, title: "المسندة حديثًا", orderIndex: 0, isDefault: true },
+        { userId: adminId, title: "اليوم", orderIndex: 1 },
+        { userId: adminId, title: "قادمة", orderIndex: 2 },
+        { userId: adminId, title: "لاحقًا", orderIndex: 3 },
+      ]);
+      console.log("✔ أقسام «مهامي» الافتراضية");
+    }
   }
 
   console.log("اكتمل الزرع ✔");

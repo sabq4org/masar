@@ -24,7 +24,7 @@ export const session = pgTable(
   (t) => [index("IDX_session_expire").on(t.expire)],
 );
 
-// ─── المستخدمون والأقسام ───────────────────────────────────────────
+// ─── المستخدمون والفرق ─────────────────────────────────────────────
 
 export const departments = pgTable("departments", {
   id: serial("id").primaryKey(),
@@ -35,7 +35,7 @@ export const departments = pgTable("departments", {
   isActive: boolean("is_active").notNull().default(true),
 });
 
-// الأدوار ثابتة في الكود (server/permissions.ts) — لا جداول RBAC في MVP
+// الأدوار ثابتة في الكود (server/permissions.ts)
 export const users = pgTable(
   "users",
   {
@@ -52,35 +52,25 @@ export const users = pgTable(
   (t) => [index("users_department_idx").on(t.departmentId)],
 );
 
-// ─── محرك الحالات ──────────────────────────────────────────────────
+// ─── أقسام «مهامي» الشخصية (نموذج أسانا) ───────────────────────────
+// لكل مستخدم أقسامه الخاصة في صفحة مهامي؛ قسم واحد افتراضي isDefault
+// («المسندة حديثًا») تهبط فيه المهام الجديدة ولا يُحذف.
 
-// الفئة السلوكية تستخدمها الفلاتر والتقارير حتى مع حالات مخصصة جديدة
-export const statuses = pgTable("statuses", {
-  id: serial("id").primaryKey(),
-  key: varchar("key", { length: 40 }).notNull().unique(),
-  nameAr: text("name_ar").notNull(),
-  color: varchar("color", { length: 7 }).notNull(),
-  category: varchar("category", { length: 20 }).notNull(), // planning|active|blocked|review|done|closed
-  orderIndex: integer("order_index").notNull().default(0),
-  isDefault: boolean("is_default").notNull().default(false),
-  isSystem: boolean("is_system").notNull().default(false),
-});
-
-export const statusTransitions = pgTable(
-  "status_transitions",
+export const userTaskSections = pgTable(
+  "user_task_sections",
   {
     id: serial("id").primaryKey(),
-    fromStatusId: integer("from_status_id")
+    userId: integer("user_id")
       .notNull()
-      .references(() => statuses.id, { onDelete: "cascade" }),
-    toStatusId: integer("to_status_id")
-      .notNull()
-      .references(() => statuses.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    orderIndex: integer("order_index").notNull().default(0),
+    isDefault: boolean("is_default").notNull().default(false),
   },
-  (t) => [uniqueIndex("transitions_from_to_idx").on(t.fromStatusId, t.toStatusId)],
+  (t) => [index("uts_user_idx").on(t.userId)],
 );
 
-// ─── المشاريع والأقسام الداخلية ────────────────────────────────────
+// ─── المشاريع والأقسام ─────────────────────────────────────────────
 
 export const projects = pgTable(
   "projects",
@@ -93,6 +83,9 @@ export const projects = pgTable(
     ownerId: integer("owner_id").references(() => users.id),
     color: varchar("color", { length: 7 }).notNull().default("#33658A"),
     status: varchar("status", { length: 20 }).notNull().default("active"), // active|archived
+    // آخر حالة معلنة (تنعكس من project_status_updates): on_track|at_risk|off_track|on_hold|complete
+    currentStatus: varchar("current_status", { length: 20 }),
+    defaultView: varchar("default_view", { length: 20 }).notNull().default("list"), // list|board|timeline|calendar|overview
     startAt: timestamp("start_at"),
     endAt: timestamp("end_at"),
     createdById: integer("created_by_id").references(() => users.id),
@@ -114,7 +107,53 @@ export const projectSections = pgTable(
   (t) => [index("sections_project_idx").on(t.projectId)],
 );
 
-// ─── المهام ────────────────────────────────────────────────────────
+export const projectMembers = pgTable(
+  "project_members",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("pm_project_user_idx").on(t.projectId, t.userId)],
+);
+
+export const projectStars = pgTable(
+  "project_stars",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("stars_project_user_idx").on(t.projectId, t.userId)],
+);
+
+// تحديثات حالة المشروع (نموذج أسانا: على المسار / في خطر / متعثر / معلّق / مكتمل)
+export const projectStatusUpdates = pgTable(
+  "project_status_updates",
+  {
+    id: serial("id").primaryKey(),
+    projectId: integer("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    createdById: integer("created_by_id").references(() => users.id),
+    statusType: varchar("status_type", { length: 20 }).notNull(), // on_track|at_risk|off_track|on_hold|complete
+    title: text("title"),
+    body: text("body"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("psu_project_idx").on(t.projectId)],
+);
+
+// ─── المهام (نموذج أسانا: مكتملة/غير مكتملة + أقسام حرة) ───────────
 
 export const tasks = pgTable(
   "tasks",
@@ -122,53 +161,39 @@ export const tasks = pgTable(
     id: serial("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
-    statusId: integer("status_id")
-      .notNull()
-      .references(() => statuses.id),
-    priority: varchar("priority", { length: 10 }).notNull().default("normal"), // low|normal|high|urgent
-    progress: integer("progress").notNull().default(0),
-    color: varchar("color", { length: 7 }),
+    isCompleted: boolean("is_completed").notNull().default(false),
+    completedAt: timestamp("completed_at"),
+    completedById: integer("completed_by_id").references(() => users.id),
+    // task عادية | milestone معلم | approval اعتماد (نموذج أسانا)
+    taskType: varchar("task_type", { length: 20 }).notNull().default("task"),
+    approvalStatus: varchar("approval_status", { length: 20 }), // pending|approved|changes_requested|rejected
+    priority: varchar("priority", { length: 10 }), // low|normal|high|urgent — null = بلا أولوية
     tags: text("tags").array().notNull().default([]),
     assigneeId: integer("assignee_id").references(() => users.id),
     createdById: integer("created_by_id").references(() => users.id),
     departmentId: integer("department_id").references(() => departments.id),
-    // قرار MVP: مشروع واحد لكل مهمة بأعمدة مباشرة؛ الإسكان المتعدد لاحقًا
-    // عبر جدول placements (هجرة INSERT..SELECT بسيطة موثقة في README)
     projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }),
     sectionId: integer("section_id").references(() => projectSections.id, { onDelete: "set null" }),
-    parentTaskId: integer("parent_task_id"),
+    parentTaskId: integer("parent_task_id"), // المهام الفرعية مهام كاملة (نموذج أسانا)
     orderIndex: integer("order_index").notNull().default(0),
+    // موضع المهمة في «مهامي» عند المسؤول عنها؛ null = قسم «المسندة حديثًا»
+    myTasksSectionId: integer("my_tasks_section_id").references(() => userTaskSections.id, {
+      onDelete: "set null",
+    }),
+    myTasksOrderIndex: integer("my_tasks_order_index").notNull().default(0),
     startAt: timestamp("start_at"),
     dueAt: timestamp("due_at"),
-    completedAt: timestamp("completed_at"),
-    sourceType: varchar("source_type", { length: 20 }), // meeting|message|alert|manual
-    sourceRef: text("source_ref"),
-    linkUrl: text("link_url"), // رابط المادة الصحفية أو أي مرجع خارجي
+    linkUrl: text("link_url"),
     isArchived: boolean("is_archived").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (t) => [
-    index("tasks_assignee_status_idx").on(t.assigneeId, t.statusId),
+    index("tasks_assignee_completed_idx").on(t.assigneeId, t.isCompleted),
     index("tasks_project_section_idx").on(t.projectId, t.sectionId, t.orderIndex),
     index("tasks_due_idx").on(t.dueAt),
-    index("tasks_status_idx").on(t.statusId),
     index("tasks_parent_idx").on(t.parentTaskId),
   ],
-);
-
-export const subtasks = pgTable(
-  "subtasks",
-  {
-    id: serial("id").primaryKey(),
-    taskId: integer("task_id")
-      .notNull()
-      .references(() => tasks.id, { onDelete: "cascade" }),
-    title: text("title").notNull(),
-    isDone: boolean("is_done").notNull().default(false),
-    orderIndex: integer("order_index").notNull().default(0),
-  },
-  (t) => [index("subtasks_task_idx").on(t.taskId)],
 );
 
 export const taskComments = pgTable(
@@ -188,6 +213,7 @@ export const taskComments = pgTable(
   (t) => [index("comments_task_idx").on(t.taskId)],
 );
 
+// المتعاونون (Collaborators في أسانا)
 export const taskWatchers = pgTable(
   "task_watchers",
   {
@@ -200,6 +226,34 @@ export const taskWatchers = pgTable(
       .references(() => users.id),
   },
   (t) => [uniqueIndex("watchers_task_user_idx").on(t.taskId, t.userId)],
+);
+
+export const taskLikes = pgTable(
+  "task_likes",
+  {
+    id: serial("id").primaryKey(),
+    taskId: integer("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("task_likes_task_user_idx").on(t.taskId, t.userId)],
+);
+
+export const commentLikes = pgTable(
+  "comment_likes",
+  {
+    id: serial("id").primaryKey(),
+    commentId: integer("comment_id")
+      .notNull()
+      .references(() => taskComments.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("comment_likes_comment_user_idx").on(t.commentId, t.userId)],
 );
 
 export const taskActivity = pgTable(
@@ -233,28 +287,23 @@ export const taskDependencies = pgTable(
   (t) => [uniqueIndex("deps_task_blocker_idx").on(t.taskId, t.blockedByTaskId)],
 );
 
-// ─── الاعتمادات: طلب التعديل لا يغلق المهمة ────────────────────────
+// ─── المرفقات ──────────────────────────────────────────────────────
 
-export const taskApprovals = pgTable(
-  "task_approvals",
+export const attachments = pgTable(
+  "attachments",
   {
     id: serial("id").primaryKey(),
     taskId: integer("task_id")
       .notNull()
       .references(() => tasks.id, { onDelete: "cascade" }),
-    requestedById: integer("requested_by_id")
-      .notNull()
-      .references(() => users.id),
-    approverId: integer("approver_id")
-      .notNull()
-      .references(() => users.id),
-    state: varchar("state", { length: 20 }).notNull().default("pending"), // pending|approved|changes_requested|rejected
-    note: text("note"),
-    decisionNote: text("decision_note"),
-    decidedAt: timestamp("decided_at"),
+    fileName: text("file_name").notNull(), // الاسم المخزن على القرص
+    originalName: text("original_name").notNull(),
+    mime: varchar("mime", { length: 120 }),
+    size: integer("size").notNull().default(0),
+    uploadedById: integer("uploaded_by_id").references(() => users.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (t) => [index("approvals_approver_state_idx").on(t.approverId, t.state)],
+  (t) => [index("attachments_task_idx").on(t.taskId)],
 );
 
 // ─── قوالب المشاريع ────────────────────────────────────────────────
@@ -280,10 +329,11 @@ export const notifications = pgTable(
     userId: integer("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    type: varchar("type", { length: 40 }).notNull(), // assigned|mention|status_change|due_soon|overdue|comment
+    type: varchar("type", { length: 40 }).notNull(), // assigned|mention|completed|due_soon|overdue|comment|like|approval…
     title: text("title").notNull(),
     body: text("body"),
     taskId: integer("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+    actorId: integer("actor_id").references(() => users.id),
     isRead: boolean("is_read").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -293,16 +343,23 @@ export const notifications = pgTable(
 // ─── العلاقات ──────────────────────────────────────────────────────
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
-  status: one(statuses, { fields: [tasks.statusId], references: [statuses.id] }),
   assignee: one(users, { fields: [tasks.assigneeId], references: [users.id] }),
   createdBy: one(users, { fields: [tasks.createdById], references: [users.id] }),
+  completedBy: one(users, { fields: [tasks.completedById], references: [users.id] }),
   project: one(projects, { fields: [tasks.projectId], references: [projects.id] }),
   section: one(projectSections, { fields: [tasks.sectionId], references: [projectSections.id] }),
   department: one(departments, { fields: [tasks.departmentId], references: [departments.id] }),
-  subtasks: many(subtasks),
+  parent: one(tasks, {
+    fields: [tasks.parentTaskId],
+    references: [tasks.id],
+    relationName: "subtasks",
+  }),
+  subtasks: many(tasks, { relationName: "subtasks" }),
   comments: many(taskComments),
   watchers: many(taskWatchers),
+  likes: many(taskLikes),
   activity: many(taskActivity),
+  attachments: many(attachments),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -310,6 +367,9 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   owner: one(users, { fields: [projects.ownerId], references: [users.id] }),
   sections: many(projectSections),
   tasks: many(tasks),
+  members: many(projectMembers),
+  stars: many(projectStars),
+  statusUpdates: many(projectStatusUpdates),
 }));
 
 export const projectSectionsRelations = relations(projectSections, ({ one, many }) => ({
@@ -317,17 +377,45 @@ export const projectSectionsRelations = relations(projectSections, ({ one, many 
   tasks: many(tasks),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+  project: one(projects, { fields: [projectMembers.projectId], references: [projects.id] }),
+  user: one(users, { fields: [projectMembers.userId], references: [users.id] }),
+}));
+
+export const projectStarsRelations = relations(projectStars, ({ one }) => ({
+  project: one(projects, { fields: [projectStars.projectId], references: [projects.id] }),
+  user: one(users, { fields: [projectStars.userId], references: [users.id] }),
+}));
+
+export const projectStatusUpdatesRelations = relations(projectStatusUpdates, ({ one }) => ({
+  project: one(projects, { fields: [projectStatusUpdates.projectId], references: [projects.id] }),
+  createdBy: one(users, { fields: [projectStatusUpdates.createdById], references: [users.id] }),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
   department: one(departments, { fields: [users.departmentId], references: [departments.id] }),
+  myTaskSections: many(userTaskSections),
 }));
 
-export const subtasksRelations = relations(subtasks, ({ one }) => ({
-  task: one(tasks, { fields: [subtasks.taskId], references: [tasks.id] }),
+export const userTaskSectionsRelations = relations(userTaskSections, ({ one, many }) => ({
+  user: one(users, { fields: [userTaskSections.userId], references: [users.id] }),
+  tasks: many(tasks),
 }));
 
-export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
+export const taskCommentsRelations = relations(taskComments, ({ one, many }) => ({
   task: one(tasks, { fields: [taskComments.taskId], references: [tasks.id] }),
   user: one(users, { fields: [taskComments.userId], references: [users.id] }),
+  likes: many(commentLikes),
+}));
+
+export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
+  comment: one(taskComments, { fields: [commentLikes.commentId], references: [taskComments.id] }),
+  user: one(users, { fields: [commentLikes.userId], references: [users.id] }),
+}));
+
+export const taskLikesRelations = relations(taskLikes, ({ one }) => ({
+  task: one(tasks, { fields: [taskLikes.taskId], references: [tasks.id] }),
+  user: one(users, { fields: [taskLikes.userId], references: [users.id] }),
 }));
 
 export const taskWatchersRelations = relations(taskWatchers, ({ one }) => ({
@@ -340,19 +428,30 @@ export const taskActivityRelations = relations(taskActivity, ({ one }) => ({
   user: one(users, { fields: [taskActivity.userId], references: [users.id] }),
 }));
 
+export const attachmentsRelations = relations(attachments, ({ one }) => ({
+  task: one(tasks, { fields: [attachments.taskId], references: [tasks.id] }),
+  uploadedBy: one(users, { fields: [attachments.uploadedById], references: [users.id] }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+  actor: one(users, { fields: [notifications.actorId], references: [users.id] }),
+  task: one(tasks, { fields: [notifications.taskId], references: [tasks.id] }),
+}));
+
 // ─── أنواع مشتركة ──────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
 export type Department = typeof departments.$inferSelect;
-export type Status = typeof statuses.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type ProjectSection = typeof projectSections.$inferSelect;
+export type ProjectStatusUpdate = typeof projectStatusUpdates.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
-export type Subtask = typeof subtasks.$inferSelect;
 export type TaskComment = typeof taskComments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
-export type TaskApproval = typeof taskApprovals.$inferSelect;
 export type ProjectTemplate = typeof projectTemplates.$inferSelect;
+export type UserTaskSection = typeof userTaskSections.$inferSelect;
+export type Attachment = typeof attachments.$inferSelect;
 
 export interface TemplateStructure {
   sections: Array<{
@@ -360,3 +459,11 @@ export interface TemplateStructure {
     tasks: Array<{ title: string; priority?: string; description?: string }>;
   }>;
 }
+
+export const PROJECT_STATUS_TYPES = {
+  on_track: { label: "على المسار", color: "#2E7D5B" },
+  at_risk: { label: "في خطر", color: "#A87A0E" },
+  off_track: { label: "متعثر", color: "#B0413E" },
+  on_hold: { label: "معلّق", color: "#46536B" },
+  complete: { label: "مكتمل", color: "#33658A" },
+} as const;

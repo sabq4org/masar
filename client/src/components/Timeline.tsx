@@ -1,17 +1,13 @@
 import { useMemo } from "react";
 import type { TaskRow } from "../lib/types";
+import { useTaskPane } from "../lib/taskPane";
 
 const DAY_W = 26;
 const MS_DAY = 86400_000;
 
-/** خط زمني خفيف: شريط لكل مهمة من البداية (أو الإنشاء) حتى الاستحقاق */
-export default function Timeline({
-  tasks,
-  onOpen,
-}: {
-  tasks: TaskRow[];
-  onOpen: (id: number) => void;
-}) {
+/** الجدول الزمني: شريط لكل مهمة من البداية (أو الإنشاء) حتى الاستحقاق */
+export default function Timeline({ tasks }: { tasks: TaskRow[] }) {
+  const pane = useTaskPane();
   const rows = useMemo(
     () =>
       tasks
@@ -40,7 +36,7 @@ export default function Timeline({
   if (!range)
     return (
       <div className="rounded-card border border-dashed border-line py-12 text-center text-sm text-ink-3">
-        لا مهام بمواعيد استحقاق لعرضها على الخط الزمني
+        لا مهام بمواعيد استحقاق لعرضها على الجدول الزمني
       </div>
     );
 
@@ -48,7 +44,6 @@ export default function Timeline({
   const todayX = x(new Date());
   const width = range.days * DAY_W;
 
-  // علامات الأيام (كل يومين لتخفيف الزحام)
   const ticks: Date[] = [];
   for (let i = 0; i < range.days; i += 2) {
     ticks.push(new Date(range.from.getTime() + i * MS_DAY));
@@ -63,7 +58,7 @@ export default function Timeline({
           {rows.map(({ task }) => (
             <button
               key={task.id}
-              onClick={() => onOpen(task.id)}
+              onClick={() => pane.open(task.id)}
               className="flex h-9 w-full items-center gap-1.5 truncate border-b border-line-soft px-2.5 text-right text-xs font-semibold hover:bg-line-soft/50"
               title={task.title}
             >
@@ -87,11 +82,10 @@ export default function Timeline({
                   className="absolute top-0 flex h-9 items-center border-l border-line-soft pl-1 text-[10px] tabular-nums text-ink-3"
                   style={{ left: x(d) }}
                 >
-                  {d.toLocaleDateString("ar-SA", { day: "numeric", month: "short" })}
+                  {d.toLocaleDateString("ar-SA-u-ca-gregory", { day: "numeric", month: "short" })}
                 </div>
               ))}
             </div>
-            {/* خط اليوم */}
             {todayX > 0 && todayX < width && (
               <div
                 className="absolute bottom-0 top-9 z-10 w-px bg-danger"
@@ -102,22 +96,22 @@ export default function Timeline({
             {rows.map(({ task, start, due }) => {
               const left = x(start);
               const w = Math.max(x(due) - left, DAY_W * 0.8);
-              const overdue =
-                due < new Date() &&
-                task.status?.category !== "done" &&
-                task.status?.category !== "closed";
+              const overdue = due < new Date() && !task.isCompleted;
               return (
                 <div key={task.id} className="relative h-9 border-b border-line-soft">
                   <button
-                    onClick={() => onOpen(task.id)}
+                    onClick={() => pane.open(task.id)}
                     className="absolute top-1.5 h-6 rounded-md px-2 text-[10px] font-bold text-paper shadow-sm transition hover:opacity-80"
                     style={{
                       left,
                       width: w,
-                      background: task.status?.color ?? "#475569",
-                      outline: overdue ? "2px solid #ef4444" : undefined,
+                      background: task.isCompleted
+                        ? "#77705F"
+                        : task.project?.color ?? "var(--masar-ink-2)",
+                      outline: overdue ? "2px solid #B0413E" : undefined,
+                      opacity: task.isCompleted ? 0.55 : 1,
                     }}
-                    title={`${task.title} — ${task.status?.nameAr ?? ""}`}
+                    title={task.title}
                   >
                     <span className="block truncate" dir="rtl">{task.title}</span>
                   </button>

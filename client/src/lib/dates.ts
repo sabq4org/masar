@@ -1,0 +1,80 @@
+const MS_DAY = 86400_000;
+
+export function startOfDay(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+export function isSameDay(a: Date, b: Date) {
+  return a.toDateString() === b.toDateString();
+}
+
+/** نص الاستحقاق بأسلوب أسانا: اليوم / غدًا / أمس / الاثنين / ١٢ يوليو */
+export function dueLabel(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const today = startOfDay(new Date());
+  const target = startOfDay(d);
+  const diff = Math.round((target.getTime() - today.getTime()) / MS_DAY);
+  if (diff === 0) return "اليوم";
+  if (diff === 1) return "غدًا";
+  if (diff === -1) return "أمس";
+  if (diff > 1 && diff < 7)
+    return d.toLocaleDateString("ar-SA-u-ca-gregory", { weekday: "long" });
+  const sameYear = d.getFullYear() === today.getFullYear();
+  return d.toLocaleDateString("ar-SA-u-ca-gregory", {
+    day: "numeric",
+    month: "short",
+    year: sameYear ? undefined : "numeric",
+  });
+}
+
+/** لون الاستحقاق: أحمر متأخر، أخضر اليوم/غدًا (أسلوب أسانا)، رمادي لما بعد */
+export function dueTone(iso: string | null, isCompleted: boolean): string {
+  if (!iso || isCompleted) return "text-ink-3";
+  const today = startOfDay(new Date());
+  const target = startOfDay(new Date(iso));
+  const diff = Math.round((target.getTime() - today.getTime()) / MS_DAY);
+  if (diff < 0) return "text-danger";
+  if (diff <= 1) return "text-success";
+  return "text-ink-3";
+}
+
+/** وقت نسبي موجز للتعليقات والنشاط */
+export function relTime(iso: string): string {
+  const s = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return "الآن";
+  const m = Math.round(s / 60);
+  if (m < 60) return `قبل ${m} د`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `قبل ${h} س`;
+  const d = Math.round(h / 24);
+  if (d < 7) return `قبل ${d} ي`;
+  return new Date(iso).toLocaleDateString("ar-SA-u-ca-gregory", { day: "numeric", month: "short" });
+}
+
+/** قيمة حقل input[type=date] من ISO */
+export function toDateInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** تاريخ اليوم للعرض في الرئيسية */
+export function todayLine(): string {
+  return new Date().toLocaleDateString("ar-SA-u-ca-gregory", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+export function greeting(name: string): string {
+  const h = new Date().getHours();
+  const first = name.split(" ")[0];
+  if (h < 12) return `صباح الخير، ${first}`;
+  if (h < 17) return `مساء الخير، ${first}`;
+  return `مساء الخير، ${first}`;
+}

@@ -1,6 +1,6 @@
-import { and, eq, gt, inArray, isNotNull, lt, sql } from "drizzle-orm";
+import { and, eq, gt, isNotNull, lt } from "drizzle-orm";
 import { db } from "./db";
-import { tasks, statuses, notifications } from "../shared/schema";
+import { tasks, notifications } from "../shared/schema";
 import { notify } from "./services/tasksService";
 
 /**
@@ -9,12 +9,6 @@ import { notify } from "./services/tasksService";
  * - «متأخرة»: تجاوزت الاستحقاق ولم يُرسل تذكير تأخر خلال آخر 24 ساعة
  */
 async function sendDueReminders() {
-  const allStatuses = await db.select().from(statuses);
-  const openIds = allStatuses
-    .filter((s) => s.category !== "done" && s.category !== "closed")
-    .map((s) => s.id);
-  if (!openIds.length) return;
-
   const now = new Date();
   const in24h = new Date(now.getTime() + 24 * 3600_000);
 
@@ -24,7 +18,7 @@ async function sendDueReminders() {
     .where(
       and(
         eq(tasks.isArchived, false),
-        inArray(tasks.statusId, openIds),
+        eq(tasks.isCompleted, false),
         isNotNull(tasks.assigneeId),
         isNotNull(tasks.dueAt),
         lt(tasks.dueAt, in24h),
@@ -52,7 +46,7 @@ async function sendDueReminders() {
       .limit(1);
     if (already) continue;
 
-    const dueStr = task.dueAt.toLocaleString("ar-SA", {
+    const dueStr = task.dueAt.toLocaleString("ar-SA-u-ca-gregory", {
       day: "numeric",
       month: "short",
       hour: "2-digit",

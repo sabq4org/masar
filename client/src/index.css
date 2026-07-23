@@ -76,16 +76,25 @@ button, a, input, select, textarea {
 }
 .masar-urgent-dot { animation: masar-pulse 1.6s ease-out infinite; }
 
-/* ورقة التفاصيل — انزلاق من اليسار (نهاية الشاشة في RTL للـ LTR-left panel) */
+/* لوحة التفاصيل — انزلاق من نهاية الشاشة (يسار في RTL) مثل أسانا */
 @keyframes masar-sheet-in {
-  from { transform: translateX(-12px); opacity: 0.85; }
+  from { transform: translateX(-16px); opacity: 0.8; }
   to { transform: translateX(0); opacity: 1; }
 }
-.masar-sheet { animation: masar-sheet-in 200ms ease-out; }
+.masar-sheet { animation: masar-sheet-in 180ms ease-out; }
+
+/* إكمال المهمة — نبضة خضراء قصيرة بأسلوب أسانا */
+@keyframes masar-check-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.masar-check-pop { animation: masar-check-pop 250ms ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
   .masar-urgent-dot { animation: none; }
   .masar-sheet { animation: none; }
+  .masar-check-pop { animation: none; }
   button, a, input, select, textarea { transition: none; }
 }
 
@@ -98,3 +107,6 @@ button, a, input, select, textarea {
 
 /* منع تمدّد أفقي على الشاشات الضيقة */
 html, body, #root { max-width: 100%; overflow-x: hidden; }
+
+/* حقول التاريخ داخل المنبثقات تُعرض LTR */
+input[type="date"] { direction: ltr; }

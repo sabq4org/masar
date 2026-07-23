@@ -86,6 +86,34 @@ export function registerAuthRoutes(app: Express) {
     if (!user) return res.status(401).json({ error: "غير مسجل" });
     res.json(publicUser(user));
   });
+
+  // تحديث الملف الشخصي
+  app.patch("/api/auth/me", async (req, res) => {
+    const user = await getSessionUser(req);
+    if (!user) return res.status(401).json({ error: "غير مسجل" });
+    const parsed = z
+      .object({
+        name: z.string().min(1).max(120).optional(),
+        avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        password: z.string().min(8).max(100).optional(),
+        currentPassword: z.string().optional(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success)
+      return res.status(400).json({ error: "بيانات غير صالحة — كلمة المرور ٨ أحرف على الأقل" });
+
+    const set: Record<string, unknown> = {};
+    if (parsed.data.name) set.name = parsed.data.name;
+    if (parsed.data.avatarColor) set.avatarColor = parsed.data.avatarColor;
+    if (parsed.data.password) {
+      const ok = await bcrypt.compare(parsed.data.currentPassword ?? "", user.passwordHash);
+      if (!ok) return res.status(403).json({ error: "كلمة المرور الحالية غير صحيحة" });
+      set.passwordHash = await bcrypt.hash(parsed.data.password, 10);
+    }
+    if (!Object.keys(set).length) return res.json(publicUser(user));
+    const [updated] = await db.update(users).set(set).where(eq(users.id, user.id)).returning();
+    res.json(publicUser(updated));
+  });
 }
 
 function publicUser(user: typeof users.$inferSelect) {

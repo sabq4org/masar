@@ -6,7 +6,7 @@ const LIVE_PREFIXES = [
   "/api/projects",
   "/api/reports",
   "/api/notifications",
-  "/api/approvals",
+  "/api/my-tasks",
 ];
 
 /** اشتراك SSE: أي تغيير على المهام لدى أي مستخدم يبطل الكاش فتتحدث الشاشة لحظيًا */

@@ -1,125 +1,195 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import clsx from "clsx";
+import { Calendar, LayoutGrid, List, Plus } from "lucide-react";
 import { api, queryClient } from "../lib/api";
-import type { TaskRow } from "../lib/types";
-import { Avatar, DueBadge, PriorityChip, StatusChip } from "../components/bits";
-import TaskSheet from "../components/TaskSheet";
+import type { Me, MyTaskSection, TaskRow } from "../lib/types";
+import { Avatar, Spinner } from "../components/bits";
+import TaskList, { type ListGroup } from "../components/TaskList";
+import TaskBoard from "../components/TaskBoard";
+import CalendarMonth from "../components/CalendarMonth";
 
-const GROUPS = [
-  { key: "overdue", label: "متأخرة" },
-  { key: "today", label: "اليوم" },
-  { key: "upcoming", label: "قادمة (٧ أيام)" },
-  { key: "later", label: "لاحقًا / بلا موعد" },
-] as const;
+type View = "list" | "board" | "calendar";
 
+/** مهامي — نموذج أسانا: أقسام شخصية + قائمة/لوحة/تقويم */
 export default function MyTasks() {
-  const [openId, setOpenId] = useState<number | null>(null);
-  const [quickTitle, setQuickTitle] = useState("");
-  const { data } = useQuery<TaskRow[] | null>({ queryKey: ["/api/tasks?mine=1&roots=1"] });
-  const tasks = Array.isArray(data) ? data : [];
+  const [view, setView] = useState<View>(() => {
+    try {
+      return (localStorage.getItem("masar-my-view") as View) || "list";
+    } catch {
+      return "list";
+    }
+  });
+  const [showCompleted, setShowCompleted] = useState(false);
 
-  const quickAdd = useMutation({
-    mutationFn: (title: string) => api("POST", "/api/tasks", { title }),
+  const { data: meData } = useQuery<Me | null>({ queryKey: ["/api/auth/me"] });
+  const me = meData ?? null;
+  const tasksKey = `/api/tasks?assigneeId=${me?.id ?? 0}&roots=1${showCompleted ? "" : "&completed=0"}`;
+  const { data: tasksData, isLoading } = useQuery<TaskRow[] | null>({
+    queryKey: [tasksKey],
+    enabled: !!me,
+  });
+  const { data: sectionsData } = useQuery<MyTaskSection[] | null>({
+    queryKey: ["/api/my-tasks/sections"],
+  });
+
+  const tasks = Array.isArray(tasksData) ? tasksData : [];
+  const sections = Array.isArray(sectionsData) ? sectionsData : [];
+  const defaultSection = sections.find((s) => s.isDefault) ?? sections[0];
+
+  const groups: ListGroup[] = useMemo(
+    () =>
+      sections.map((s) => ({
+        id: s.id,
+        title: s.title,
+        deletable: !s.isDefault,
+        renamable: !s.isDefault,
+      })),
+    [sections],
+  );
+
+  // المهام بلا قسم شخصي تهبط في القسم الافتراضي «المسندة حديثًا»
+  const groupOf = (t: TaskRow) =>
+    t.myTasksSectionId && sections.some((s) => s.id === t.myTasksSectionId)
+      ? t.myTasksSectionId
+      : defaultSection?.id ?? null;
+
+  function setView2(v: View) {
+    setView(v);
+    try {
+      localStorage.setItem("masar-my-view", v);
+    } catch {}
+  }
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: [tasksKey] });
+
+  const reorder = useMutation({
+    mutationFn: ({ orderedIds, groupId }: { movedId: number; groupId: number | null; orderedIds: number[] }) =>
+      api("POST", "/api/tasks/reorder", {
+        items: orderedIds.map((id, i) => ({ id, myTasksSectionId: groupId, myTasksOrderIndex: i })),
+      }),
+    onMutate: async ({ movedId, groupId, orderedIds }) => {
+      await queryClient.cancelQueries({ queryKey: [tasksKey] });
+      queryClient.setQueryData<TaskRow[] | null>([tasksKey], (old) =>
+        (old ?? []).map((t) => {
+          const at = orderedIds.indexOf(t.id);
+          if (t.id === movedId) return { ...t, myTasksSectionId: groupId, myTasksOrderIndex: at };
+          if (at !== -1) return { ...t, myTasksOrderIndex: at };
+          return t;
+        }),
+      );
+    },
+    onSettled: invalidate,
+  });
+
+  const addTask = useMutation({
+    mutationFn: ({ title, groupId }: { title: string; groupId: number | null }) =>
+      api("POST", "/api/tasks", { title, assigneeId: me?.id }).then((task: TaskRow) =>
+        groupId && groupId !== defaultSection?.id
+          ? api("PATCH", `/api/tasks/${task.id}`, { myTasksSectionId: groupId })
+          : task,
+      ),
+    onSuccess: invalidate,
+  });
+
+  const patchTask = useMutation({
+    mutationFn: ({ id, fields }: { id: number; fields: Record<string, unknown> }) =>
+      api("PATCH", `/api/tasks/${id}`, fields),
+    onMutate: async ({ id, fields }) => {
+      await queryClient.cancelQueries({ queryKey: [tasksKey] });
+      queryClient.setQueryData<TaskRow[] | null>([tasksKey], (old) =>
+        (old ?? []).map((t) => (t.id === id ? { ...t, ...fields } : t)),
+      );
+    },
+    onSettled: invalidate,
+  });
+
+  const addSection = useMutation({
+    mutationFn: (title: string) => api("POST", "/api/my-tasks/sections", { title }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/my-tasks/sections"] }),
+  });
+  const renameSection = useMutation({
+    mutationFn: ({ id, title }: { id: number; title: string }) =>
+      api("PATCH", `/api/my-tasks/sections/${id}`, { title }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/my-tasks/sections"] }),
+  });
+  const deleteSection = useMutation({
+    mutationFn: (id: number) => api("DELETE", `/api/my-tasks/sections/${id}`),
     onSuccess: () => {
-      setQuickTitle("");
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks?mine=1&roots=1"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/my-tasks/sections"] });
+      invalidate();
     },
   });
 
-  const grouped = useMemo(() => {
-    const now = new Date();
-    const todayEnd = new Date(now);
-    todayEnd.setHours(23, 59, 59);
-    const weekEnd = new Date(now.getTime() + 7 * 86400_000);
-    const open = tasks.filter(
-      (t) => t.status?.category !== "done" && t.status?.category !== "closed",
-    );
-    return {
-      overdue: open.filter((t) => t.dueAt && new Date(t.dueAt) < now && new Date(t.dueAt).toDateString() !== now.toDateString()),
-      today: open.filter((t) => t.dueAt && new Date(t.dueAt).toDateString() === now.toDateString()),
-      upcoming: open.filter((t) => {
-        if (!t.dueAt) return false;
-        const d = new Date(t.dueAt);
-        return d > todayEnd && d <= weekEnd;
-      }),
-      later: open.filter((t) => !t.dueAt || new Date(t.dueAt) > weekEnd),
-    } as Record<string, TaskRow[]>;
-  }, [tasks]);
+  const VIEWS: { key: View; label: string; icon: typeof List }[] = [
+    { key: "list", label: "قائمة", icon: List },
+    { key: "board", label: "لوحة", icon: LayoutGrid },
+    { key: "calendar", label: "تقويم", icon: Calendar },
+  ];
+
+  if (!me) return <Spinner />;
+
+  const common = {
+    groups,
+    tasks,
+    groupOf,
+    orderOf: (t: TaskRow) => t.myTasksOrderIndex,
+    onReorder: (movedId: number, groupId: number | null, orderedIds: number[]) =>
+      reorder.mutate({ movedId, groupId, orderedIds }),
+    onAddTask: (title: string, groupId: number | null) => addTask.mutate({ title, groupId }),
+    onPatchTask: (id: number, fields: Record<string, unknown>) => patchTask.mutate({ id, fields }),
+    onAddGroup: (title: string) => addSection.mutate(title),
+  };
 
   return (
-    <div className="mx-auto w-full max-w-3xl xl:max-w-4xl">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h1 className="text-xl font-extrabold">مهامي</h1>
-        <span className="hidden text-[11px] font-semibold text-ink-3 lg:inline">
-          N مهمة جديدة · Esc إغلاق
-        </span>
+    <div>
+      {/* ─── الرأس ─── */}
+      <div className="mb-1 flex items-center gap-3">
+        <Avatar name={me.name} color={me.avatarColor} size={9} />
+        <h1 className="font-display text-xl font-bold">مهامي</h1>
+      </div>
+      <div className="mb-3 flex items-center gap-1 border-b border-line">
+        {VIEWS.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setView2(key)}
+            className={clsx(
+              "flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-semibold",
+              view === key
+                ? "border-saffron text-ink"
+                : "border-transparent text-ink-3 hover:text-ink",
+            )}
+          >
+            <Icon size={14} /> {label}
+          </button>
+        ))}
+        <div className="flex-1" />
+        <label className="flex cursor-pointer select-none items-center gap-1.5 pb-1 text-xs font-semibold text-ink-3">
+          <input
+            type="checkbox"
+            checked={showCompleted}
+            onChange={(e) => setShowCompleted(e.target.checked)}
+            className="accent-[var(--masar-saffron)]"
+          />
+          إظهار المكتملة
+        </label>
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (quickTitle.trim()) quickAdd.mutate(quickTitle.trim());
-        }}
-        className="mb-4 flex h-10 items-center gap-2 rounded-field border border-line bg-surface px-3"
-      >
-        <Plus size={16} className="text-accent" />
-        <input
-          id="masar-quick-add"
-          value={quickTitle}
-          onChange={(e) => setQuickTitle(e.target.value)}
-          placeholder="إضافة مهمة سريعة…"
-          className="min-w-0 flex-1 bg-transparent text-sm focus:outline-none"
+      {isLoading ? (
+        <Spinner />
+      ) : view === "list" ? (
+        <TaskList
+          {...common}
+          showAssignee={false}
+          showProject
+          onRenameGroup={(id, title) => renameSection.mutate({ id, title })}
+          onDeleteGroup={(id) => deleteSection.mutate(id)}
         />
-      </form>
-
-      {GROUPS.map(({ key, label }) => {
-        const list = grouped[key] ?? [];
-        if (!list.length && key !== "today") return null;
-        return (
-          <section key={key} className="mb-4">
-            <h2 className="mb-1.5 flex items-center gap-2 text-xs font-bold text-ink-2">
-              {label}
-              <span className="rounded-chip bg-line-soft px-1.5 text-[11px] tabular-nums">{list.length}</span>
-            </h2>
-            <div className="divide-y divide-line-soft overflow-hidden rounded-field border border-line bg-surface">
-              {list.length === 0 && (
-                <div className="px-3 py-4 text-center text-sm text-ink-3">لا مهام هنا — السطر أمامك نظيف</div>
-              )}
-              {list.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setOpenId(t.id)}
-                  className="flex min-h-10 w-full items-center gap-2 px-2.5 py-2 text-right text-sm hover:bg-line-soft/50 sm:gap-2.5 sm:px-3"
-                >
-                  {t.project && (
-                    <span
-                      className="h-2 w-2 flex-none rounded-chip"
-                      title={t.project.name}
-                      style={{ background: t.project.color }}
-                    />
-                  )}
-                  <span className="min-w-0 flex-1 truncate font-semibold">{t.title}</span>
-                  <span className="hidden sm:inline-flex">
-                    <PriorityChip priority={t.priority} />
-                  </span>
-                  <span className="hidden md:inline-flex">
-                    <StatusChip status={t.status} />
-                  </span>
-                  <DueBadge task={t} />
-                  {t.assignee && (
-                    <span className="hidden sm:inline-flex">
-                      <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size={6} />
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </section>
-        );
-      })}
-
-      {openId && <TaskSheet taskId={openId} onClose={() => setOpenId(null)} />}
+      ) : view === "board" ? (
+        <TaskBoard {...common} />
+      ) : (
+        <CalendarMonth tasks={tasks} />
+      )}
     </div>
   );
 }

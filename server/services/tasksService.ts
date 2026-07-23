@@ -6,12 +6,10 @@ import {
   taskWatchers,
   taskDependencies,
   notifications,
-  statuses,
-  statusTransitions,
+  userTaskSections,
   type Task,
   type User,
 } from "../../shared/schema";
-import { isTransitionAllowed } from "../../shared/statusRules";
 import { broadcast } from "./events";
 
 export async function logActivity(
@@ -30,16 +28,17 @@ export async function notify(
   body: string | null,
   taskId: number | null,
   excludeUserId?: number,
+  actorId?: number,
 ) {
   const targets = [...new Set(userIds)].filter((id) => id && id !== excludeUserId);
   if (!targets.length) return;
   await db
     .insert(notifications)
-    .values(targets.map((userId) => ({ userId, type, title, body, taskId })));
+    .values(targets.map((userId) => ({ userId, type, title, body, taskId, actorId: actorId ?? null })));
   broadcast({ type: "notifications" });
 }
 
-/** المسؤول + المشاركون — جمهور إشعارات المهمة */
+/** المسؤول + المتعاونون + المنشئ — جمهور إشعارات المهمة */
 export async function taskAudience(task: Task): Promise<number[]> {
   const watchers = await db
     .select({ userId: taskWatchers.userId })
@@ -52,59 +51,39 @@ export async function taskAudience(task: Task): Promise<number[]> {
 }
 
 /**
- * تغيير حالة مهمة مع فرض مصفوفة الانتقالات.
- * الانتقال إلى فئة closed (مؤجلة/ملغاة) مسموح من أي حالة،
- * والخروج من closed مسموح إلى أي حالة غير مغلقة.
+ * إكمال / إلغاء إكمال مهمة (نموذج أسانا).
+ * إكمال الأم لا يُكمل الفرعية؛ عند الإكمال تُشعر الجمهور وتُنبّه
+ * مسؤولي المهام التي كانت محجوبة بهذه المهمة.
  */
-export async function changeStatus(task: Task, toStatusId: number, actor: User) {
-  const [from] = await db.select().from(statuses).where(eq(statuses.id, task.statusId));
-  const [to] = await db.select().from(statuses).where(eq(statuses.id, toStatusId));
-  if (!to) throw Object.assign(new Error("الحالة غير موجودة"), { status: 400 });
-  if (from.id === to.id) return task;
+export async function setTaskCompletion(task: Task, completed: boolean, actor: User) {
+  if (task.isCompleted === completed) return task;
 
-  const [allowed] = await db
-    .select()
-    .from(statusTransitions)
-    .where(
-      and(
-        eq(statusTransitions.fromStatusId, from.id),
-        eq(statusTransitions.toStatusId, to.id),
-      ),
-    );
-  if (!isTransitionAllowed(from.category, to.category, Boolean(allowed)))
-    throw Object.assign(
-      new Error(`الانتقال من «${from.nameAr}» إلى «${to.nameAr}» غير مسموح`),
-      { status: 422 },
-    );
-
-  const done = to.category === "done";
   const [updated] = await db
     .update(tasks)
     .set({
-      statusId: to.id,
-      completedAt: done ? new Date() : null,
-      progress: done ? 100 : task.progress,
+      isCompleted: completed,
+      completedAt: completed ? new Date() : null,
+      completedById: completed ? actor.id : null,
       updatedAt: new Date(),
     })
     .where(eq(tasks.id, task.id))
     .returning();
 
-  await logActivity(task.id, actor.id, "status_changed", {
-    from: from.nameAr,
-    to: to.nameAr,
-  });
-  const audience = await taskAudience(updated);
-  await notify(
-    audience,
-    "status_change",
-    `تغيّرت حالة «${task.title}»`,
-    `من ${from.nameAr} إلى ${to.nameAr} بواسطة ${actor.name}`,
-    task.id,
-    actor.id,
-  );
+  await logActivity(task.id, actor.id, completed ? "completed" : "uncompleted");
 
-  // اكتمال مهمة حاجبة → أشعر مسؤولي المهام المحجوبة بها
-  if (done || to.category === "closed") {
+  if (completed) {
+    const audience = await taskAudience(updated);
+    await notify(
+      audience,
+      "completed",
+      `أكمل ${actor.name} مهمة: «${task.title}»`,
+      null,
+      task.id,
+      actor.id,
+      actor.id,
+    );
+
+    // انفتح الطريق للمهام المحجوبة بهذه المهمة
     const dependents = await db
       .select({ taskId: taskDependencies.taskId })
       .from(taskDependencies)
@@ -122,6 +101,8 @@ export async function changeStatus(task: Task, toStatusId: number, actor: User) 
             `انفتح الطريق لمهمتك «${bt.title}»`,
             `اكتملت المهمة الحاجبة: «${task.title}»`,
             bt.id,
+            undefined,
+            actor.id,
           );
       }
     }
@@ -131,20 +112,26 @@ export async function changeStatus(task: Task, toStatusId: number, actor: User) 
   return updated;
 }
 
-export async function allowedNextStatuses(statusId: number) {
-  const [current] = await db.select().from(statuses).where(eq(statuses.id, statusId));
-  if (!current) return [];
-  const all = await db.select().from(statuses).orderBy(statuses.orderIndex);
-  if (current.category === "closed")
-    return all.filter((s) => s.category !== "closed" || s.id === current.id);
+/** أقسام «مهامي» للمستخدم — تُنشأ الافتراضية عند أول طلب */
+export async function ensureMyTaskSections(userId: number) {
+  const existing = await db
+    .select()
+    .from(userTaskSections)
+    .where(eq(userTaskSections.userId, userId))
+    .orderBy(userTaskSections.orderIndex);
+  if (existing.length) return existing;
+
+  const defaults = [
+    { title: "المسندة حديثًا", isDefault: true },
+    { title: "اليوم", isDefault: false },
+    { title: "قادمة", isDefault: false },
+    { title: "لاحقًا", isDefault: false },
+  ];
   const rows = await db
-    .select({ toId: statusTransitions.toStatusId })
-    .from(statusTransitions)
-    .where(eq(statusTransitions.fromStatusId, statusId));
-  const allowedIds = new Set(rows.map((r) => r.toId));
-  return all.filter(
-    (s) => s.id === current.id || allowedIds.has(s.id) || s.category === "closed",
-  );
+    .insert(userTaskSections)
+    .values(defaults.map((d, i) => ({ userId, title: d.title, orderIndex: i, isDefault: d.isDefault })))
+    .returning();
+  return rows;
 }
 
 export async function getTasksByIds(ids: number[]) {

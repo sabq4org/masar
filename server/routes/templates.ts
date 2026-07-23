@@ -6,8 +6,8 @@ import {
   projectTemplates,
   projects,
   projectSections,
+  projectMembers,
   tasks,
-  statuses,
   type TemplateStructure,
 } from "../../shared/schema";
 import { requirePermission } from "../auth";
@@ -49,7 +49,11 @@ export function registerTemplateRoutes(app: Express) {
           title: s.title,
           tasks: projectTasks
             .filter((t) => t.sectionId === s.id && !t.parentTaskId)
-            .map((t) => ({ title: t.title, priority: t.priority, description: t.description ?? undefined })),
+            .map((t) => ({
+              title: t.title,
+              priority: t.priority ?? undefined,
+              description: t.description ?? undefined,
+            })),
         })),
       };
       // مهام بلا قسم
@@ -57,7 +61,7 @@ export function registerTemplateRoutes(app: Express) {
       if (orphans.length)
         structure.sections.push({
           title: "عام",
-          tasks: orphans.map((t) => ({ title: t.title, priority: t.priority })),
+          tasks: orphans.map((t) => ({ title: t.title, priority: t.priority ?? undefined })),
         });
 
       const [template] = await db
@@ -97,9 +101,6 @@ export function registerTemplateRoutes(app: Express) {
       if (!template) return res.status(404).json({ error: "القالب غير موجود" });
       const structure = template.structure as TemplateStructure;
 
-      const [defaultStatus] = await db.select().from(statuses).where(eq(statuses.isDefault, true));
-      if (!defaultStatus) return res.status(500).json({ error: "لا توجد حالة افتراضية" });
-
       const [project] = await db
         .insert(projects)
         .values({
@@ -112,6 +113,10 @@ export function registerTemplateRoutes(app: Express) {
           createdById: user.id,
         })
         .returning();
+      await db
+        .insert(projectMembers)
+        .values({ projectId: project.id, userId: user.id })
+        .onConflictDoNothing();
 
       for (const [si, section] of structure.sections.entries()) {
         const [sec] = await db
@@ -123,8 +128,9 @@ export function registerTemplateRoutes(app: Express) {
             section.tasks.map((t, ti) => ({
               title: t.title,
               description: t.description ?? null,
-              priority: (t.priority as any) ?? "normal",
-              statusId: defaultStatus.id,
+              priority: ["low", "normal", "high", "urgent"].includes(t.priority ?? "")
+                ? (t.priority as string)
+                : null,
               projectId: project.id,
               sectionId: sec.id,
               orderIndex: ti,

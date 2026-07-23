@@ -15,6 +15,7 @@ export default defineConfig({
     port: 5181,
     proxy: {
       "/api": { target: "http://localhost:5180", changeOrigin: true },
+      "/uploads": { target: "http://localhost:5180", changeOrigin: true },
     },
   },
   build: {

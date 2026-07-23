@@ -8,16 +8,6 @@ export interface Me {
   permissions: string[];
 }
 
-export interface StatusRow {
-  id: number;
-  key: string;
-  nameAr: string;
-  color: string;
-  category: string;
-  orderIndex: number;
-  isDefault: boolean;
-}
-
 export interface UserLite {
   id: number;
   name: string;
@@ -33,6 +23,39 @@ export interface DepartmentRow {
   color: string;
 }
 
+export interface SectionRow {
+  id: number;
+  title: string;
+  orderIndex: number;
+}
+
+export interface MyTaskSection {
+  id: number;
+  userId: number;
+  title: string;
+  orderIndex: number;
+  isDefault: boolean;
+}
+
+export interface MemberRow {
+  id: number;
+  userId: number;
+  name: string;
+  avatarColor: string;
+}
+
+export type ProjectStatusType = "on_track" | "at_risk" | "off_track" | "on_hold" | "complete";
+
+export interface StatusUpdateRow {
+  id: number;
+  projectId: number;
+  statusType: ProjectStatusType;
+  title: string | null;
+  body: string | null;
+  createdAt: string;
+  createdBy?: { id: number; name: string; avatarColor: string } | null;
+}
+
 export interface ProjectRow {
   id: number;
   name: string;
@@ -40,46 +63,109 @@ export interface ProjectRow {
   type: string;
   color: string;
   status: string;
+  currentStatus: ProjectStatusType | null;
+  defaultView: string;
   departmentId: number | null;
   ownerId: number | null;
   taskCount?: number;
   doneCount?: number;
-  sections?: { id: number; title: string; orderIndex: number }[];
+  memberCount?: number;
+  isStarred?: boolean;
+  sections?: SectionRow[];
+  members?: MemberRow[];
+  lastStatusUpdate?: StatusUpdateRow | null;
 }
+
+export type TaskType = "task" | "milestone" | "approval";
+export type ApprovalStatus = "pending" | "approved" | "changes_requested" | "rejected";
+export type Priority = "low" | "normal" | "high" | "urgent";
 
 export interface TaskRow {
   id: number;
   title: string;
   description: string | null;
-  statusId: number;
-  priority: "low" | "normal" | "high" | "urgent";
-  progress: number;
+  isCompleted: boolean;
+  completedAt: string | null;
+  taskType: TaskType;
+  approvalStatus: ApprovalStatus | null;
+  priority: Priority | null;
   tags: string[];
   assigneeId: number | null;
   projectId: number | null;
   sectionId: number | null;
+  parentTaskId: number | null;
+  orderIndex: number;
+  myTasksSectionId: number | null;
+  myTasksOrderIndex: number;
   dueAt: string | null;
   startAt: string | null;
-  completedAt: string | null;
   linkUrl: string | null;
   isArchived: boolean;
   createdAt: string;
-  status?: StatusRow;
+  updatedAt: string;
   assignee?: { id: number; name: string; avatarColor: string } | null;
   project?: { id: number; name: string; color: string } | null;
+  section?: { id: number; title: string } | null;
+  subtasks?: { id: number; isCompleted: boolean }[];
 }
 
-export interface ApprovalRow {
+export interface SubtaskRow extends TaskRow {
+  assignee?: { id: number; name: string; avatarColor: string } | null;
+}
+
+export interface CommentRow {
+  id: number;
+  content: string;
+  createdAt: string;
+  user: { id: number; name: string; avatarColor: string };
+  likes: { userId: number }[];
+}
+
+export interface AttachmentRow {
   id: number;
   taskId: number;
-  requestedById: number;
-  approverId: number;
-  state: "pending" | "approved" | "changes_requested" | "rejected";
-  note: string | null;
-  decisionNote: string | null;
-  decidedAt: string | null;
+  fileName: string;
+  originalName: string;
+  mime: string | null;
+  size: number;
   createdAt: string;
-  task?: TaskRow;
+}
+
+export interface ActivityRow {
+  id: number;
+  action: string;
+  detail: any;
+  createdAt: string;
+  user: { id: number; name: string } | null;
+}
+
+export interface TaskDetail extends TaskRow {
+  parent?: { id: number; title: string } | null;
+  createdBy?: { id: number; name: string } | null;
+  completedBy?: { id: number; name: string } | null;
+  subtasks: SubtaskRow[];
+  comments: CommentRow[];
+  watchers: { userId: number; user: { id: number; name: string; avatarColor: string } }[];
+  likes: { userId: number; user: { id: number; name: string } }[];
+  likedByMe: boolean;
+  attachments: AttachmentRow[];
+  activity: ActivityRow[];
+  dependencies: {
+    id: number;
+    blockedByTaskId: number;
+    task: { id: number; title: string; isCompleted: boolean } | null;
+  }[];
+}
+
+export interface NotificationRow {
+  id: number;
+  type: string;
+  title: string;
+  body: string | null;
+  taskId: number | null;
+  isRead: boolean;
+  createdAt: string;
+  actor?: { id: number; name: string; avatarColor: string } | null;
 }
 
 export interface TemplateRow {
@@ -92,31 +178,23 @@ export interface TemplateRow {
   createdAt: string;
 }
 
-export interface TaskDetail extends TaskRow {
-  dependencies: { id: number; blockedByTaskId: number; title: string; statusId: number }[];
-  approvals: ApprovalRow[];
-  createdBy?: { id: number; name: string } | null;
-  subtasks: { id: number; title: string; isDone: boolean }[];
-  comments: {
-    id: number;
-    content: string;
-    createdAt: string;
-    user: { id: number; name: string; avatarColor: string };
-  }[];
-  watchers: { userId: number; user: { id: number; name: string } }[];
-  activity: {
-    id: number;
-    action: string;
-    detail: any;
-    createdAt: string;
-    user: { id: number; name: string } | null;
-  }[];
-  nextStatuses: StatusRow[];
-}
-
-export const PRIORITY_LABELS: Record<string, { label: string; cls: string }> = {
-  low: { label: "منخفضة", cls: "bg-line-soft text-ink-2" },
-  normal: { label: "عادية", cls: "bg-blue-100 text-blue-800" },
-  high: { label: "عالية", cls: "bg-amber-100 text-amber-800" },
-  urgent: { label: "عاجلة", cls: "bg-red-100 text-red-700" },
+/** أولويات بأسلوب حقول أسانا الملونة */
+export const PRIORITIES: Record<string, { label: string; bg: string; fg: string }> = {
+  urgent: { label: "عاجلة", bg: "#B0413E22", fg: "#B0413E" },
+  high: { label: "عالية", bg: "#C2701E22", fg: "#C2701E" },
+  normal: { label: "متوسطة", bg: "#A87A0E22", fg: "#8a6a10" },
+  low: { label: "منخفضة", bg: "#33658A1f", fg: "#33658A" },
 };
+
+export const PROJECT_STATUS_META: Record<string, { label: string; color: string }> = {
+  on_track: { label: "على المسار", color: "#2E7D5B" },
+  at_risk: { label: "في خطر", color: "#A87A0E" },
+  off_track: { label: "متعثر", color: "#B0413E" },
+  on_hold: { label: "معلّق", color: "#46536B" },
+  complete: { label: "مكتمل", color: "#33658A" },
+};
+
+export const PROJECT_COLORS = [
+  "#C2701E", "#33658A", "#2E7D5B", "#B0413E", "#A87A0E",
+  "#46536B", "#5D8FB5", "#8C5A2E", "#274E6D", "#77705F",
+];
