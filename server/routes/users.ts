@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { db } from "../db";
 import { users } from "../../shared/schema";
 import { requirePermission } from "../auth";
-import { PERMISSIONS, ROLES, ROLE_LABELS_AR } from "../permissions";
+import { PERMISSIONS, ROLES, ROLE_LABELS_AR, ROLE_GROUPS } from "../permissions";
 
 const AVATAR_COLORS = [
   "#33658A", "#2E7D5B", "#A87A0E", "#C2701E", "#46536B",
@@ -103,6 +103,12 @@ export function registerUserAdminRoutes(app: Express) {
   );
 
   app.get("/api/roles", requirePermission(PERMISSIONS.USERS_MANAGE), (_req, res) => {
-    res.json(ROLES.map((r) => ({ value: r, label: ROLE_LABELS_AR[r] })));
+    res.json({
+      roles: ROLES.map((r) => ({ value: r, label: ROLE_LABELS_AR[r] })),
+      groups: ROLE_GROUPS.map((g) => ({
+        label: g.label,
+        roles: g.roles.map((r) => ({ value: r, label: ROLE_LABELS_AR[r] })),
+      })),
+    });
   });
 }

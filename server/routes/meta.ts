@@ -4,7 +4,7 @@ import { asc, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { departments, users, tasks, projects } from "../../shared/schema";
 import { requireAuth, requirePermission } from "../auth";
-import { PERMISSIONS, ROLE_LABELS_AR } from "../permissions";
+import { PERMISSIONS, roleLabelAr } from "../permissions";
 
 /** بيانات مرجعية: الفرق والمستخدمون */
 export function registerMetaRoutes(app: Express) {
@@ -114,7 +114,7 @@ export function registerMetaRoutes(app: Express) {
     res.json(
       list.map((u) => ({
         ...u,
-        roleLabel: ROLE_LABELS_AR[u.role as keyof typeof ROLE_LABELS_AR] ?? u.role,
+        roleLabel: roleLabelAr(u.role),
       })),
     );
   });

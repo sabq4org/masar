@@ -1,30 +1,52 @@
-// الأدوار والصلاحيات — خريطة ثابتة في الكود (MVP)، تنتقل لجداول عند الحاجة لأدوار مخصصة
+// الأدوار والصلاحيات — خريطة ثابتة في الكود (MVP)
+// مجموعات تنظيمية: تنفيذي · تشغيلي · تخطيط وتطوير · عام
+
 export const ROLES = [
   "admin", // مدير النظام
-  "editor_chief", // رئيس التحرير ونوابه
-  "managing_editor", // مدير التحرير
-  "dept_head", // رئيس قسم
-  "editor", // محرر
-  "reporter", // مراسل
-  "proofreader", // مدقق
-  "media", // مصور/مصمم/فيديو/سوشيال
-  "operations", // إداري
-  "guest", // ضيف/متعاون خارجي
+  "executive", // تنفيذي / قيادة
+  "ops_manager", // مدير تشغيلي
+  "ops", // تشغيلي
+  "planning", // تخطيط وتطوير
+  "project_lead", // قائد مشروع
+  "specialist", // أخصائي
+  "member", // عضو
+  "support", // مساندة
+  "guest", // ضيف / متعاون
 ] as const;
 
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS_AR: Record<Role, string> = {
   admin: "مدير النظام",
-  editor_chief: "رئيس التحرير",
-  managing_editor: "مدير التحرير",
-  dept_head: "رئيس قسم",
-  editor: "محرر",
-  reporter: "مراسل",
-  proofreader: "مدقق",
-  media: "وسائط",
-  operations: "إداري",
+  executive: "تنفيذي",
+  ops_manager: "مدير تشغيلي",
+  ops: "تشغيلي",
+  planning: "تخطيط وتطوير",
+  project_lead: "قائد مشروع",
+  specialist: "أخصائي",
+  member: "عضو",
+  support: "مساندة",
   guest: "ضيف",
+};
+
+/** تجميع الأدوار في قائمة المستخدمين */
+export const ROLE_GROUPS: { label: string; roles: Role[] }[] = [
+  { label: "تنفيذي", roles: ["admin", "executive"] },
+  { label: "تشغيلي", roles: ["ops_manager", "ops", "specialist"] },
+  { label: "تخطيط وتطوير", roles: ["planning", "project_lead"] },
+  { label: "عام", roles: ["member", "support", "guest"] },
+];
+
+/** أدوار النموذج الإعلامي القديم → الأدوار الجديدة (ترحيل آمن) */
+export const LEGACY_ROLE_MAP: Record<string, Role> = {
+  editor_chief: "executive",
+  managing_editor: "executive",
+  dept_head: "ops_manager",
+  editor: "member",
+  reporter: "member",
+  proofreader: "specialist",
+  media: "specialist",
+  operations: "support",
 };
 
 const P = {
@@ -46,28 +68,43 @@ export const PERMISSIONS = P;
 
 const ROLE_PERMISSIONS: Record<Role, string[]> = {
   admin: ["*"],
-  editor_chief: ["*"],
-  managing_editor: [
+  executive: ["*"],
+  ops_manager: [
     P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_ANY, P.EDIT_OWN,
     P.ASSIGN, P.DELETE, P.APPROVE, P.PROJECTS_MANAGE, P.REPORTS_VIEW,
   ],
-  dept_head: [
+  ops: [P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_OWN, P.ASSIGN],
+  planning: [
+    P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_ANY, P.EDIT_OWN,
+    P.ASSIGN, P.PROJECTS_MANAGE, P.REPORTS_VIEW,
+  ],
+  project_lead: [
     P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_ANY, P.EDIT_OWN,
     P.ASSIGN, P.APPROVE, P.PROJECTS_MANAGE, P.REPORTS_VIEW,
   ],
-  editor: [P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_OWN],
-  reporter: [P.VIEW_OWN, P.CREATE, P.EDIT_OWN],
-  proofreader: [P.VIEW_ALL, P.VIEW_OWN, P.EDIT_OWN],
-  media: [P.VIEW_OWN, P.CREATE, P.EDIT_OWN],
-  operations: [P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_OWN],
+  specialist: [P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_OWN],
+  member: [P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_OWN],
+  support: [P.VIEW_ALL, P.VIEW_OWN, P.CREATE, P.EDIT_OWN],
   guest: [P.VIEW_OWN],
 };
 
+function normalizeRole(role: string): Role | null {
+  if ((ROLES as readonly string[]).includes(role)) return role as Role;
+  return LEGACY_ROLE_MAP[role] ?? null;
+}
+
 export function permissionsForRole(role: string): string[] {
-  return ROLE_PERMISSIONS[role as Role] ?? [P.VIEW_OWN];
+  const normalized = normalizeRole(role);
+  return normalized ? ROLE_PERMISSIONS[normalized] : [P.VIEW_OWN];
 }
 
 export function roleHas(role: string, permission: string): boolean {
   const perms = permissionsForRole(role);
   return perms.includes("*") || perms.includes(permission);
+}
+
+export function roleLabelAr(role: string): string {
+  const normalized = normalizeRole(role);
+  if (normalized) return ROLE_LABELS_AR[normalized];
+  return role;
 }
