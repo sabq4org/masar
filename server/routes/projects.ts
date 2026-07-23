@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { z } from "zod";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "../db";
 import { projects, projectSections, tasks, statuses } from "../../shared/schema";
 import { requireAuth, requirePermission } from "../auth";
@@ -20,17 +20,30 @@ const projectInput = z.object({
 export function registerProjectRoutes(app: Express) {
   app.get("/api/projects", requireAuth, async (req, res) => {
     const archived = req.query.archived === "1";
-    const rows = await db
-      .select({
-        project: projects,
-        total: sql<number>`(select count(*) from ${tasks} where ${tasks.projectId} = ${projects.id} and ${tasks.isArchived} = false)`,
-        done: sql<number>`(select count(*) from ${tasks} join ${statuses} on ${statuses.id} = ${tasks.statusId} where ${tasks.projectId} = ${projects.id} and ${tasks.isArchived} = false and ${statuses.category} in ('done','closed'))`,
-      })
-      .from(projects)
-      .where(eq(projects.status, archived ? "archived" : "active"))
-      .orderBy(desc(projects.createdAt));
+    const [rows, counts] = await Promise.all([
+      db
+        .select()
+        .from(projects)
+        .where(eq(projects.status, archived ? "archived" : "active"))
+        .orderBy(desc(projects.createdAt)),
+      db
+        .select({
+          projectId: tasks.projectId,
+          total: sql<number>`count(*)`,
+          done: sql<number>`count(*) filter (where ${statuses.category} in ('done','closed'))`,
+        })
+        .from(tasks)
+        .innerJoin(statuses, eq(tasks.statusId, statuses.id))
+        .where(and(eq(tasks.isArchived, false), isNotNull(tasks.projectId)))
+        .groupBy(tasks.projectId),
+    ]);
+    const byProject = new Map(counts.map((c) => [c.projectId, c]));
     res.json(
-      rows.map((r) => ({ ...r.project, taskCount: Number(r.total), doneCount: Number(r.done) })),
+      rows.map((p) => ({
+        ...p,
+        taskCount: Number(byProject.get(p.id)?.total ?? 0),
+        doneCount: Number(byProject.get(p.id)?.done ?? 0),
+      })),
     );
   });
 

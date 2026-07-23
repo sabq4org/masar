@@ -108,9 +108,8 @@ export default function Layout({ me, children }: { me: Me; children: React.React
   return (
     <div className="flex min-h-screen">
       <aside className="fixed inset-y-0 right-0 flex w-56 flex-col border-l border-line bg-surface">
-        <div className="border-b border-line px-5 py-4">
-          <MasarLogo />
-          <div className="mt-1.5 text-[11px] font-medium text-ink-3">صحيفة سبق</div>
+        <div className="border-b border-line px-5 py-5">
+          <MasarLogo size={30} />
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {NAV.filter((i) => can(i.perm)).map((i) => (

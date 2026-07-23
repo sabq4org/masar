@@ -1,24 +1,53 @@
-import clsx from "clsx";
-
-/** شعار «مسار» — كلمة بكشيدة ممدودة يواصل سطرها طريقه إلى نقطة زعفرانية */
-export function MasarLogo({ size = "md" }: { size?: "md" | "lg" }) {
-  const lg = size === "lg";
+/**
+ * شعار «مسار» — مطابق لبناء دليل الهوية:
+ * الكلمة بخط Alexandria وكشيدة ممدودة، وسطر الكتابة يواصل طريقه
+ * خارج الكلمة على مستوى الكشيدة نفسه لينتهي بنقطة زعفرانية.
+ * النِّسَب مأخوذة من الوثيقة (بالنسبة لحجم الخط): السطر يبدأ بعد فجوة
+ * 8٪ من نهاية الكلمة، طوله 57٪، سماكته 5٪، والنقطة قطرها 17٪.
+ */
+export function MasarLogo({ size = 26 }: { size?: number }) {
+  const u = size / 120; // معامل النسب — الوثيقة مبنية على 120px
   return (
-    <span className={clsx("inline-flex flex-col", lg ? "gap-1" : "gap-0.5")}>
-      <span className="flex items-end gap-2">
-        <span
-          className={clsx("font-display font-extrabold leading-none text-ink", lg ? "text-4xl" : "text-2xl")}
-        >
-          مســـار
-        </span>
+    <span
+      className="relative inline-block select-none"
+      style={{ paddingLeft: 110 * u, lineHeight: 1 }}
+      aria-label="مسار"
+    >
+      <span
+        style={{
+          fontFamily: "Alexandria, 'IBM Plex Sans Arabic', sans-serif",
+          fontWeight: 700,
+          fontSize: size,
+          lineHeight: 1,
+          color: "var(--masar-ink)",
+        }}
+      >
+        مســــار
       </span>
-      <span className="flex items-center" aria-hidden="true">
-        <span className={clsx("h-[2px] rounded-chip bg-ink", lg ? "w-24" : "w-14")} />
-        <span className={clsx("h-[2px] flex-1 rounded-chip bg-line", lg ? "min-w-8" : "min-w-5")} />
-        <span
-          className={clsx("rounded-chip bg-saffron", lg ? "h-2.5 w-2.5" : "h-2 w-2")}
-        />
-      </span>
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          bottom: 14 * u,
+          left: 32 * u,
+          width: 68 * u,
+          height: Math.max(6 * u, 2),
+          background: "var(--masar-ink)",
+          borderRadius: 3 * u,
+        }}
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          bottom: 7 * u,
+          left: 6 * u,
+          width: Math.max(20 * u, 5),
+          height: Math.max(20 * u, 5),
+          background: "var(--masar-saffron)",
+          borderRadius: "50%",
+        }}
+      />
     </span>
   );
 }

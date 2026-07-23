@@ -28,13 +28,12 @@ export default function Login() {
         onSubmit={submit}
         className="w-full max-w-sm rounded-sheet border border-line bg-surface p-8 shadow-card"
       >
-        <div className="mb-2 flex justify-center">
-          <MasarLogo size="lg" />
+        <div className="mb-3 flex justify-center">
+          <MasarLogo size={56} />
         </div>
-        <p className="mb-1 text-center text-sm text-ink-2">
+        <p className="mb-7 text-center text-sm text-ink-2">
           من الفكرة إلى النشر… على سطرٍ واحد.
         </p>
-        <p className="mb-7 text-center text-[11px] font-medium text-ink-3">صحيفة سبق</p>
 
         <label className="mb-1 block text-sm font-bold">البريد الإلكتروني</label>
         <input
