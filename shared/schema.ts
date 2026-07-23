@@ -46,6 +46,8 @@ export const users = pgTable(
     role: varchar("role", { length: 40 }).notNull().default("editor"),
     departmentId: integer("department_id").references(() => departments.id),
     avatarColor: varchar("avatar_color", { length: 7 }).notNull().default("#475569"),
+    /** مسار صورة عامة مثل /avatars/ali.jpg — إن وُجدت تُعرض بدل الحرف الملوّن */
+    avatarUrl: text("avatar_url"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

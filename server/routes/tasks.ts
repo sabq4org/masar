@@ -41,7 +41,7 @@ const taskInput = z.object({
 });
 
 const taskCard = {
-  assignee: { columns: { id: true, name: true, avatarColor: true } },
+  assignee: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } },
   project: { columns: { id: true, name: true, color: true } },
   section: { columns: { id: true, title: true } },
 } as const;
@@ -174,24 +174,24 @@ export function registerTaskRoutes(app: Express) {
     const task = await db.query.tasks.findFirst({
       where: eq(tasks.id, id),
       with: {
-        assignee: { columns: { id: true, name: true, avatarColor: true } },
+        assignee: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } },
         createdBy: { columns: { id: true, name: true } },
         completedBy: { columns: { id: true, name: true } },
         project: { columns: { id: true, name: true, color: true } },
         section: { columns: { id: true, title: true } },
         parent: { columns: { id: true, title: true } },
         subtasks: {
-          with: { assignee: { columns: { id: true, name: true, avatarColor: true } } },
+          with: { assignee: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } } },
           orderBy: [asc(tasks.orderIndex), asc(tasks.createdAt)],
         },
         comments: {
           with: {
-            user: { columns: { id: true, name: true, avatarColor: true } },
+            user: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } },
             likes: { columns: { userId: true } },
           },
           orderBy: [asc(taskComments.createdAt)],
         },
-        watchers: { with: { user: { columns: { id: true, name: true, avatarColor: true } } } },
+        watchers: { with: { user: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } } } },
         likes: { with: { user: { columns: { id: true, name: true } } } },
         attachments: { orderBy: [desc(attachments.createdAt)] },
         activity: {

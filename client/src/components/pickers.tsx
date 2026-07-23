@@ -62,7 +62,7 @@ export function AssigneePicker({
   onChange,
   compact,
 }: {
-  value: { id: number; name: string; avatarColor: string } | null | undefined;
+  value: { id: number; name: string; avatarColor: string; avatarUrl?: string | null } | null | undefined;
   onChange: (userId: number | null) => void;
   compact?: boolean;
 }) {
@@ -90,7 +90,7 @@ export function AssigneePicker({
       >
         {value ? (
           <>
-            <Avatar name={value.name} color={value.avatarColor} size={compact ? 6 : 7} />
+            <Avatar name={value.name} color={value.avatarColor} src={value.avatarUrl} size={compact ? 6 : 7} />
             {!compact && <span className="max-w-28 truncate">{value.name}</span>}
             {!compact && (
               <span
@@ -149,7 +149,7 @@ export function AssigneePicker({
               }}
               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
             >
-              <Avatar name={u.name} color={u.avatarColor} size={6} />
+              <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={6} />
               <span className="flex-1 truncate">{u.name}</span>
               {u.roleLabel && <span className="text-[10px] text-ink-3">{u.roleLabel}</span>}
             </button>

@@ -12,10 +12,10 @@ interface SearchResults {
     title: string;
     isCompleted: boolean;
     project?: { id: number; name: string; color: string } | null;
-    assignee?: { id: number; name: string; avatarColor: string } | null;
+    assignee?: { id: number; name: string; avatarColor: string; avatarUrl?: string | null } | null;
   }[];
   projects: { id: number; name: string; color: string }[];
-  users: { id: number; name: string; avatarColor: string }[];
+  users: { id: number; name: string; avatarColor: string; avatarUrl?: string | null }[];
 }
 
 /** البحث الشامل — نافذة أسانا العلوية */
@@ -151,7 +151,7 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
                   }}
                   className="flex w-full items-center gap-2 rounded-field px-2 py-1.5 text-right text-sm font-semibold hover:bg-line-soft"
                 >
-                  <Avatar name={u.name} color={u.avatarColor} size={6} />
+                  <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={6} />
                   {u.name}
                 </button>
               ))}

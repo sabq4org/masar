@@ -14,6 +14,7 @@ async function main() {
     `).catch((e: Error) => {
       if (!/does not exist|undefined_column/i.test(e.message)) throw e;
     });
+    await client.query(`alter table users add column if not exists avatar_url text`);
 
     console.log("٢) إنشاء الجداول الناقصة…");
     await client.query(`

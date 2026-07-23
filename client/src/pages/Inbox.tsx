@@ -80,7 +80,7 @@ export default function Inbox() {
             )}
           >
             {n.actor ? (
-              <Avatar name={n.actor.name} color={n.actor.avatarColor} size={8} />
+              <Avatar name={n.actor.name} color={n.actor.avatarColor} src={n.actor.avatarUrl} size={8} />
             ) : (
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-chip bg-line-soft text-ink-3">
                 <Mail size={14} />

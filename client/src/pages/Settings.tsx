@@ -45,7 +45,7 @@ export default function Settings({ me }: { me: Me }) {
       <section className="mb-4 rounded-card border border-line bg-surface p-5">
         <h2 className="mb-4 text-sm font-bold">الملف الشخصي</h2>
         <div className="mb-4 flex items-center gap-3">
-          <Avatar name={name || me.name} color={color} size={12} />
+          <Avatar name={name || me.name} color={color} src={me.avatarUrl} size={12} />
           <div className="text-xs text-ink-3">
             <div className="font-semibold text-ink">{me.email}</div>
             لون الصورة الرمزية يظهر لزملائك في المهام والتعليقات

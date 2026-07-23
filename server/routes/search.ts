@@ -19,7 +19,7 @@ export function registerSearchRoutes(app: Express) {
         ),
         with: {
           project: { columns: { id: true, name: true, color: true } },
-          assignee: { columns: { id: true, name: true, avatarColor: true } },
+          assignee: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } },
         },
         columns: { id: true, title: true, isCompleted: true, dueAt: true },
         orderBy: [desc(tasks.updatedAt)],
@@ -31,7 +31,7 @@ export function registerSearchRoutes(app: Express) {
         .where(and(eq(projects.status, "active"), ilike(projects.name, like)))
         .limit(6),
       db
-        .select({ id: users.id, name: users.name, avatarColor: users.avatarColor })
+        .select({ id: users.id, name: users.name, avatarColor: users.avatarColor, avatarUrl: users.avatarUrl })
         .from(users)
         .where(and(eq(users.isActive, true), ilike(users.name, like)))
         .limit(6),

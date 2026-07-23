@@ -11,7 +11,7 @@ export function registerNotificationRoutes(app: Express) {
     if (!user) return res.status(401).json({ error: "غير مسجل" });
     const list = await db.query.notifications.findMany({
       where: eq(notifications.userId, user.id),
-      with: { actor: { columns: { id: true, name: true, avatarColor: true } } },
+      with: { actor: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } } },
       orderBy: [desc(notifications.createdAt)],
       limit: 80,
     });

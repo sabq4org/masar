@@ -286,7 +286,7 @@ function LayoutInner({ me, children }: { me: Me; children: React.ReactNode }) {
         </button>
         <div className="relative">
           <button onClick={() => setUserMenu(!userMenu)} className="flex items-center gap-1">
-            <Avatar name={me.name} color={me.avatarColor} size={8} />
+            <Avatar name={me.name} color={me.avatarColor} src={me.avatarUrl} size={8} />
             <ChevronDown size={12} className="text-ink-3" />
           </button>
           <Popover open={userMenu} onClose={() => setUserMenu(false)} align="end" className="w-52">

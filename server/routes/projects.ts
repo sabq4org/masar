@@ -112,6 +112,7 @@ export function registerProjectRoutes(app: Express) {
           userId: projectMembers.userId,
           name: users.name,
           avatarColor: users.avatarColor,
+          avatarUrl: users.avatarUrl,
         })
         .from(projectMembers)
         .innerJoin(users, eq(projectMembers.userId, users.id))
@@ -241,7 +242,7 @@ export function registerProjectRoutes(app: Express) {
   app.get("/api/projects/:id/status-updates", requireAuth, async (req, res) => {
     const rows = await db.query.projectStatusUpdates.findMany({
       where: eq(projectStatusUpdates.projectId, Number(req.params.id)),
-      with: { createdBy: { columns: { id: true, name: true, avatarColor: true } } },
+      with: { createdBy: { columns: { id: true, name: true, avatarColor: true, avatarUrl: true } } },
       orderBy: [desc(projectStatusUpdates.createdAt)],
       limit: 20,
     });

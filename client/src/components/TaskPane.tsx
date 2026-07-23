@@ -446,7 +446,7 @@ export default function TaskPane() {
                   <span className={clsx("min-w-0 flex-1 truncate text-sm", s.isCompleted && "text-ink-3")}>
                     {s.title}
                   </span>
-                  {s.assignee && <Avatar name={s.assignee.name} color={s.assignee.avatarColor} size={5} />}
+                  {s.assignee && <Avatar name={s.assignee.name} color={s.assignee.avatarColor} src={s.assignee.avatarUrl} size={5} />}
                 </div>
               ))}
               {addingSubtask ? (
@@ -575,7 +575,7 @@ export default function TaskPane() {
               <span className="text-xs font-bold text-ink-2">المتعاونون</span>
               <div className="flex -space-x-1 space-x-reverse">
                 {task.watchers.map((w) => (
-                  <Avatar key={w.userId} name={w.user.name} color={w.user.avatarColor} size={6} />
+                  <Avatar key={w.userId} name={w.user.name} color={w.user.avatarColor} src={w.user.avatarUrl} size={6} />
                 ))}
               </div>
               <div className="relative">
@@ -598,7 +598,7 @@ export default function TaskPane() {
                         }}
                         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
                       >
-                        <Avatar name={u.name} color={u.avatarColor} size={6} />
+                        <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={6} />
                         {u.name}
                       </button>
                     ))}
@@ -645,7 +645,7 @@ export default function TaskPane() {
             }}
             className="flex items-start gap-2"
           >
-            {me && <Avatar name={me.name} color={me.avatarColor} size={7} />}
+            {me && <Avatar name={me.name} color={me.avatarColor} src={me.avatarUrl} size={7} />}
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -727,14 +727,20 @@ function CommentBubble({
   meId,
   act,
 }: {
-  c: { id: number; content: string; createdAt: string; user: { id: number; name: string; avatarColor: string }; likes: { userId: number }[] };
+  c: {
+    id: number;
+    content: string;
+    createdAt: string;
+    user: { id: number; name: string; avatarColor: string; avatarUrl?: string | null };
+    likes: { userId: number }[];
+  };
   meId: number;
   act: any;
 }) {
   const liked = c.likes.some((l) => l.userId === meId);
   return (
     <div className="flex items-start gap-2">
-      <Avatar name={c.user.name} color={c.user.avatarColor} size={7} />
+      <Avatar name={c.user.name} color={c.user.avatarColor} src={c.user.avatarUrl} size={7} />
       <div className="min-w-0 flex-1 rounded-field border border-line-soft bg-paper/70 px-3 py-2">
         <div className="mb-0.5 flex items-baseline gap-2">
           <span className="text-xs font-bold">{c.user.name}</span>

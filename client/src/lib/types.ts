@@ -5,6 +5,7 @@ export interface Me {
   role: string;
   departmentId: number | null;
   avatarColor: string;
+  avatarUrl?: string | null;
   permissions: string[];
 }
 
@@ -14,6 +15,7 @@ export interface UserLite {
   role: string;
   roleLabel?: string;
   avatarColor: string;
+  avatarUrl?: string | null;
   departmentId: number | null;
 }
 
@@ -42,6 +44,7 @@ export interface MemberRow {
   userId: number;
   name: string;
   avatarColor: string;
+  avatarUrl?: string | null;
 }
 
 export type ProjectStatusType = "on_track" | "at_risk" | "off_track" | "on_hold" | "complete";
@@ -53,7 +56,7 @@ export interface StatusUpdateRow {
   title: string | null;
   body: string | null;
   createdAt: string;
-  createdBy?: { id: number; name: string; avatarColor: string } | null;
+  createdBy?: { id: number; name: string; avatarColor: string; avatarUrl?: string | null } | null;
 }
 
 export interface ProjectRow {
@@ -103,21 +106,21 @@ export interface TaskRow {
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
-  assignee?: { id: number; name: string; avatarColor: string } | null;
+  assignee?: { id: number; name: string; avatarColor: string; avatarUrl?: string | null } | null;
   project?: { id: number; name: string; color: string } | null;
   section?: { id: number; title: string } | null;
   subtasks?: { id: number; isCompleted: boolean }[];
 }
 
 export interface SubtaskRow extends TaskRow {
-  assignee?: { id: number; name: string; avatarColor: string } | null;
+  assignee?: { id: number; name: string; avatarColor: string; avatarUrl?: string | null } | null;
 }
 
 export interface CommentRow {
   id: number;
   content: string;
   createdAt: string;
-  user: { id: number; name: string; avatarColor: string };
+  user: { id: number; name: string; avatarColor: string; avatarUrl?: string | null };
   likes: { userId: number }[];
 }
 
@@ -145,7 +148,10 @@ export interface TaskDetail extends TaskRow {
   completedBy?: { id: number; name: string } | null;
   subtasks: SubtaskRow[];
   comments: CommentRow[];
-  watchers: { userId: number; user: { id: number; name: string; avatarColor: string } }[];
+  watchers: {
+    userId: number;
+    user: { id: number; name: string; avatarColor: string; avatarUrl?: string | null };
+  }[];
   likes: { userId: number; user: { id: number; name: string } }[];
   likedByMe: boolean;
   attachments: AttachmentRow[];
@@ -165,7 +171,7 @@ export interface NotificationRow {
   taskId: number | null;
   isRead: boolean;
   createdAt: string;
-  actor?: { id: number; name: string; avatarColor: string } | null;
+  actor?: { id: number; name: string; avatarColor: string; avatarUrl?: string | null } | null;
 }
 
 export interface TemplateRow {
