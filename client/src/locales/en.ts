@@ -374,6 +374,36 @@ export const en = {
   "ui.saving": "Saving…",
   "ui.loading": "Loading…",
   "ui.percent": "{n}%",
+
+  // Activity feed
+  "activity.title": "Activity feed",
+  "activity.scopeAll": "Whole space",
+  "activity.scopeMine": "My work",
+  "activity.live": "Live",
+  "activity.empty": "No activity yet — the first step will show up here",
+  "activity.loadMore": "Show more",
+  "activity.verb.created": "created",
+  "activity.verb.assigned": "assigned",
+  "activity.verb.updated": "updated",
+  "activity.verb.completed": "completed",
+  "activity.verb.uncompleted": "reopened",
+  "activity.verb.due_changed": "changed the due date of",
+  "activity.verb.subtask_added": "added a subtask in",
+  "activity.verb.dependency_added": "added a dependency in",
+  "activity.verb.attachment_added": "attached a file in",
+  "activity.verb.liked": "liked",
+  "activity.verb.approval_requested": "requested approval for",
+  "activity.verb.approval_decided": "decided the approval of",
+  "activity.verb.ai_split": "split",
+  "activity.verb.commented": "commented on",
+  "activity.verb.status_update": "updated the status of",
+  "activity.verb.generic": "updated",
+
+  // Task pane extras
+  "tasks.startDate": "Start date",
+  "tasks.tags": "Tags",
+  "tasks.addTag": "Add a tag…",
+  "tasks.removeTag": "Remove tag",
 } as const;
 
 export type MsgKey = keyof typeof en;

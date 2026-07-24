@@ -14,7 +14,7 @@ import { PERMISSIONS, roleHas } from "../permissions";
 
 /**
  * خط النشاط — سجل كل خطوة في المساحة (نشاط المهام + التعليقات + تحديثات حالة المشاريع).
- * من يملك tasks.view_all (مسؤول النظام، رئيس التحرير…) يرى كل شيء؛
+ * من يملك tasks.view_all (مسؤول النظام…) يرى كل شيء؛
  * غيره يرى نشاطه ونشاط المهام التي يخصّها (مسؤولًا أو منشئًا).
  */
 export function registerActivityRoutes(app: Express) {
@@ -24,8 +24,13 @@ export function registerActivityRoutes(app: Express) {
     const limit = Math.min(Number(req.query.limit) || 40, 100);
     const canViewAll = roleHas(user.role, PERMISSIONS.VIEW_ALL);
 
-    const mineOnly = or(
+    const actsMine = or(
       eq(taskActivity.userId, user.id),
+      eq(tasks.assigneeId, user.id),
+      eq(tasks.createdById, user.id),
+    )!;
+    const commentsMine = or(
+      eq(taskComments.userId, user.id),
       eq(tasks.assigneeId, user.id),
       eq(tasks.createdById, user.id),
     )!;
@@ -39,6 +44,7 @@ export function registerActivityRoutes(app: Express) {
         userId: users.id,
         userName: users.name,
         userColor: users.avatarColor,
+        userAvatar: users.avatarUrl,
         taskId: tasks.id,
         taskTitle: tasks.title,
         taskCompleted: tasks.isCompleted,
@@ -61,6 +67,7 @@ export function registerActivityRoutes(app: Express) {
         userId: users.id,
         userName: users.name,
         userColor: users.avatarColor,
+        userAvatar: users.avatarUrl,
         taskId: tasks.id,
         taskTitle: tasks.title,
         taskCompleted: tasks.isCompleted,
@@ -75,14 +82,8 @@ export function registerActivityRoutes(app: Express) {
       .orderBy(desc(taskComments.createdAt))
       .limit(limit);
 
-    const commentsMine = or(
-      eq(taskComments.userId, user.id),
-      eq(tasks.assigneeId, user.id),
-      eq(tasks.createdById, user.id),
-    )!;
-
     const [acts, comments, statusUpdates] = await Promise.all([
-      canViewAll ? actsQuery : actsQuery.where(mineOnly),
+      canViewAll ? actsQuery : actsQuery.where(actsMine),
       canViewAll ? commentsQuery : commentsQuery.where(commentsMine),
       db
         .select({
@@ -93,6 +94,7 @@ export function registerActivityRoutes(app: Express) {
           userId: users.id,
           userName: users.name,
           userColor: users.avatarColor,
+          userAvatar: users.avatarUrl,
           projectId: projects.id,
           projectName: projects.name,
           projectColor: projects.color,
@@ -104,6 +106,16 @@ export function registerActivityRoutes(app: Express) {
         .limit(20),
     ]);
 
+    const person = (r: {
+      userId: number | null;
+      userName: string | null;
+      userColor: string | null;
+      userAvatar: string | null;
+    }) =>
+      r.userId
+        ? { id: r.userId, name: r.userName!, avatarColor: r.userColor!, avatarUrl: r.userAvatar }
+        : null;
+
     const items = [
       ...acts.map((a) => ({
         key: `a${a.id}`,
@@ -111,7 +123,7 @@ export function registerActivityRoutes(app: Express) {
         action: a.action,
         detail: a.detail,
         createdAt: a.createdAt,
-        user: a.userId ? { id: a.userId, name: a.userName!, avatarColor: a.userColor! } : null,
+        user: person(a),
         task: { id: a.taskId, title: a.taskTitle, isCompleted: a.taskCompleted },
         project: a.projectId
           ? { id: a.projectId, name: a.projectName!, color: a.projectColor! }
@@ -123,7 +135,7 @@ export function registerActivityRoutes(app: Express) {
         action: "commented",
         detail: { preview: c.content.slice(0, 100) },
         createdAt: c.createdAt,
-        user: c.userId ? { id: c.userId, name: c.userName!, avatarColor: c.userColor! } : null,
+        user: person(c),
         task: { id: c.taskId, title: c.taskTitle, isCompleted: c.taskCompleted },
         project: c.projectId
           ? { id: c.projectId, name: c.projectName!, color: c.projectColor! }
@@ -135,7 +147,7 @@ export function registerActivityRoutes(app: Express) {
         action: "status_update",
         detail: { statusType: s.statusType, title: s.title },
         createdAt: s.createdAt,
-        user: s.userId ? { id: s.userId, name: s.userName!, avatarColor: s.userColor! } : null,
+        user: person(s),
         task: null,
         project: s.projectId
           ? { id: s.projectId, name: s.projectName!, color: s.projectColor! }
