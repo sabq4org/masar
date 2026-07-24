@@ -16,6 +16,7 @@ import {
   Settings,
   Star,
   Sun,
+  Sunrise,
   UserCog,
   Users,
   X,
@@ -52,7 +53,12 @@ function LayoutInner({ me, children }: { me: Me; children: React.ReactNode }) {
   const { t, locale, setLocale, dir } = useI18n();
   const isRtl = dir === "rtl";
   useLive();
-  const [night, setNight] = useState(() => document.documentElement.dataset.theme === "night");
+  type ThemeId = "paper" | "dawn" | "night";
+  const THEME_ORDER: ThemeId[] = ["paper", "dawn", "night"];
+  const [theme, setTheme] = useState<ThemeId>(() => {
+    const v = document.documentElement.dataset.theme;
+    return v === "night" || v === "dawn" ? v : "paper";
+  });
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       return localStorage.getItem("masar-nav") !== "collapsed";
@@ -94,15 +100,20 @@ function LayoutInner({ me, children }: { me: Me; children: React.ReactNode }) {
     } catch {}
   }
 
-  function toggleNight() {
-    const next = !night;
-    setNight(next);
-    if (next) document.documentElement.dataset.theme = "night";
-    else delete document.documentElement.dataset.theme;
+  function cycleTheme() {
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length]!;
+    setTheme(next);
+    if (next === "paper") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = next;
     try {
-      localStorage.setItem("masar-theme", next ? "night" : "paper");
+      localStorage.setItem("masar-theme", next);
     } catch {}
   }
+
+  const nextTheme = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length]!;
+  const themeLabel = (id: ThemeId) =>
+    id === "dawn" ? t("nav.themeDawn") : id === "night" ? t("nav.themeNight") : t("nav.themePaper");
+  const ThemeIcon = theme === "night" ? Moon : theme === "dawn" ? Sunrise : Sun;
 
   async function logout() {
     await api("POST", "/api/auth/logout");
@@ -288,11 +299,12 @@ function LayoutInner({ me, children }: { me: Me; children: React.ReactNode }) {
         </button>
 
         <button
-          onClick={toggleNight}
+          type="button"
+          onClick={cycleTheme}
           className="rounded p-1.5 text-ink-3 hover:text-saffron"
-          title={night ? t("nav.themePaper") : t("nav.themeNight")}
+          title={t("nav.themeSwitchTo", { name: themeLabel(nextTheme) })}
         >
-          {night ? <Sun size={16} /> : <Moon size={16} />}
+          <ThemeIcon size={16} />
         </button>
         <div className="relative">
           <button onClick={() => setUserMenu(!userMenu)} className="flex items-center gap-1">

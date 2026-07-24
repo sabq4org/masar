@@ -15,8 +15,9 @@
     <script>
       // تفعيل الثيم واللغة قبل الرسم الأول لتجنب الوميض
       try {
-        if (localStorage.getItem("masar-theme") === "night")
-          document.documentElement.dataset.theme = "night";
+        var theme = localStorage.getItem("masar-theme");
+        if (theme === "night" || theme === "dawn")
+          document.documentElement.dataset.theme = theme;
         var lang = localStorage.getItem("masar-lang");
         if (lang === "en") {
           document.documentElement.lang = "en";
