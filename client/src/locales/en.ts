@@ -77,6 +77,10 @@ export const en = {
 
   // Tasks
   "tasks.myTasks": "My tasks",
+  "tasks.bucket.recentHint": "New tasks with no due date — set a date or drag them",
+  "tasks.bucket.todayHint": "Due today or overdue",
+  "tasks.bucket.upcomingHint": "Due within the next 7 days",
+  "tasks.bucket.laterHint": "Due after a week",
   "tasks.add": "Add task…",
   "tasks.addTask": "Add task",
   "tasks.name": "Task name",

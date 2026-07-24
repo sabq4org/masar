@@ -23,6 +23,8 @@ export interface ListGroup {
   title: string;
   deletable?: boolean;
   renamable?: boolean;
+  /** شرح قصير تحت عنوان العمود/القسم */
+  hint?: string;
 }
 
 interface TaskListProps {

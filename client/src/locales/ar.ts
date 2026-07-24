@@ -75,6 +75,10 @@ export const ar: Record<MsgKey, string> = {
   "home.viewTeams": "عرض الفرق",
 
   "tasks.myTasks": "مهامي",
+  "tasks.bucket.recentHint": "مهام جديدة بلا تاريخ — حدّد استحقاقًا أو اسحبها",
+  "tasks.bucket.todayHint": "تستحق اليوم أو متأخرة",
+  "tasks.bucket.upcomingHint": "خلال الأيام السبعة القادمة",
+  "tasks.bucket.laterHint": "أبعد من أسبوع",
   "tasks.add": "إضافة مهمة…",
   "tasks.addTask": "إضافة مهمة",
   "tasks.name": "اسم المهمة",

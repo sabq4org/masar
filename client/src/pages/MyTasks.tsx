@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { Calendar, LayoutGrid, List } from "lucide-react";
 import { api, queryClient } from "../lib/api";
 import { useI18n } from "../lib/i18n";
+import { myTasksGroupId } from "../lib/myTasksBucket";
 import type { Me, MyTaskSection, TaskRow } from "../lib/types";
 import { Avatar, ErrorBar, Spinner } from "../components/bits";
 import TaskList, { type ListGroup } from "../components/TaskList";
@@ -38,24 +39,33 @@ export default function MyTasks() {
 
   const tasks = Array.isArray(tasksData) ? tasksData : [];
   const sections = Array.isArray(sectionsData) ? sectionsData : [];
-  const defaultSection = sections.find((s) => s.isDefault) ?? sections[0];
 
   const groups: ListGroup[] = useMemo(
     () =>
-      sections.map((s) => ({
-        id: s.id,
-        title: s.title,
-        deletable: !s.isDefault,
-        renamable: !s.isDefault,
-      })),
-    [sections],
+      sections.map((s) => {
+        const hintKey =
+          s.isDefault || s.title === "المسندة حديثًا" || s.title === "Recently assigned"
+            ? "tasks.bucket.recentHint"
+            : s.title === "اليوم" || s.title === "Today"
+              ? "tasks.bucket.todayHint"
+              : s.title === "قادمة" || s.title === "Upcoming"
+                ? "tasks.bucket.upcomingHint"
+                : s.title === "لاحقًا" || s.title === "Later" || s.title === "لاحقا"
+                  ? "tasks.bucket.laterHint"
+                  : null;
+        return {
+          id: s.id,
+          title: s.title,
+          deletable: !s.isDefault,
+          renamable: !s.isDefault,
+          hint: hintKey ? t(hintKey) : undefined,
+        };
+      }),
+    [sections, t],
   );
 
-  // المهام بلا قسم شخصي تهبط في القسم الافتراضي «المسندة حديثًا»
-  const groupOf = (t: TaskRow) =>
-    t.myTasksSectionId && sections.some((s) => s.id === t.myTasksSectionId)
-      ? t.myTasksSectionId
-      : defaultSection?.id ?? null;
+  // توزيع تلقائي حسب تاريخ الاستحقاق (مع احترام السحب اليدوي خارج «المسندة حديثًا»)
+  const groupOf = (task: TaskRow) => myTasksGroupId(task, sections);
 
   function setView2(v: View) {
     setView(v);

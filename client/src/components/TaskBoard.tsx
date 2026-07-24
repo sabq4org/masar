@@ -158,13 +158,16 @@ function Column({
         isOver ? "border-saffron bg-accent-soft/40" : "border-line",
       )}
     >
-      <div className="mb-2 flex items-center gap-1.5 px-1">
+      <div className="mb-1 flex items-center gap-1.5 px-1">
         <span className="flex-1 truncate text-sm font-bold">{group.title}</span>
         <span className="text-[11px] tabular-nums text-ink-3">{columnTasks.length}</span>
         <button onClick={() => setAdding(true)} className="rounded p-0.5 text-ink-3 hover:text-saffron" title={t("tasks.addTaskTitle")}>
           <Plus size={14} />
         </button>
       </div>
+      {group.hint && (
+        <p className="mb-2 px-1 text-[10px] leading-snug text-ink-3">{group.hint}</p>
+      )}
       {adding && (
         <form
           onSubmit={(e) => {
