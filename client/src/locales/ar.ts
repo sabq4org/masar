@@ -52,6 +52,8 @@ export const ar: Record<MsgKey, string> = {
   "nav.menu": "القائمة",
   "nav.themeNight": "حبر الليل",
   "nav.themePaper": "الوضع الورقي",
+  "nav.themeDawn": "فجر الصحراء",
+  "nav.themeSwitchTo": "التبديل إلى {name}",
   "nav.language": "اللغة",
   "nav.settingsProfile": "الإعدادات والملف الشخصي",
 

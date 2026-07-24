@@ -52,6 +52,8 @@ export const en = {
   "nav.menu": "Menu",
   "nav.themeNight": "Night ink",
   "nav.themePaper": "Paper mode",
+  "nav.themeDawn": "Desert dawn",
+  "nav.themeSwitchTo": "Switch to {name}",
   "nav.language": "Language",
   "nav.settingsProfile": "Settings & profile",
 
