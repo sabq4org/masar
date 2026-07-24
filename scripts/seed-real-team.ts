@@ -301,7 +301,7 @@ async function main() {
     {
       title: "تطوير الصلاحيات والأدوار",
       section: "التطوير",
-      assigneeId: sultan,
+      assigneeId: ali,
       priority: "high",
       dueOffset: 7,
       // موجودة مسبقًا — لن تُعاد إن وُجدت
@@ -309,7 +309,7 @@ async function main() {
     {
       title: "استكمال واختبار المميزات",
       section: "الاختبار والإطلاق",
-      assigneeId: mohsen,
+      assigneeId: ali,
       priority: "high",
       dueOffset: 10,
     },
@@ -324,10 +324,10 @@ async function main() {
     {
       title: "مراجعة ترجمة الواجهة الإنجليزية وإكمال النواقص",
       section: "التطوير",
-      assigneeId: ahmad,
+      assigneeId: ali,
       priority: "high",
       dueOffset: 4,
-      watchers: [mohsen, ali],
+      watchers: [mohsen, ahmad],
       subtasks: [
         { title: "جرد النصوص غير المترجمة", assigneeId: ahmad },
         { title: "مراجعة صياغة EN", assigneeId: hussein },
@@ -356,15 +356,15 @@ async function main() {
     {
       title: "إشعارات الوارد عند إسناد مهمة أو تعليق",
       section: "التطوير",
-      assigneeId: mohsen,
+      assigneeId: ali,
       priority: "high",
       dueOffset: 8,
-      watchers: [sultan, ali],
+      watchers: [sultan, mohsen],
     },
     {
       title: "تقرير أسبوعي آلي لمديري الفرق",
       section: "التطوير",
-      assigneeId: sultan,
+      assigneeId: ali,
       priority: "normal",
       dueOffset: 12,
       description: "ملخص: مفتوحة / متأخرة / منجزة — حسب الفريق والشخص.",
@@ -372,11 +372,11 @@ async function main() {
     {
       title: "جلسة إطلاق داخلي لفريق سبق",
       section: "الاختبار والإطلاق",
-      assigneeId: hussein,
+      assigneeId: ali,
       taskType: "milestone",
       priority: "urgent",
       dueOffset: 14,
-      watchers: [ali, mohammed, sultan, mohsen, ahmad],
+      watchers: [hussein, mohammed, sultan, mohsen, ahmad],
     },
     {
       title: "دليل استخدام مختصر (عربي + إنجليزي)",
