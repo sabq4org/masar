@@ -5,21 +5,19 @@ import clsx from "clsx";
 import { Check, ChevronLeft, Plus, Users } from "lucide-react";
 import type { Me, ProjectRow, TaskRow, UserLite } from "../lib/types";
 import { greeting, todayLine } from "../lib/dates";
-import { Avatar, CheckCircle, CollaboratorStack, DueText, ProjectDot, Spinner } from "../components/bits";
+import { Avatar, CheckCircle, DueText, ProjectDot, Spinner } from "../components/bits";
 import { NewProjectModal } from "../components/Layout";
 import { useTaskPane } from "../lib/taskPane";
+import ActivityFeed from "../components/ActivityFeed";
 import { api, queryClient } from "../lib/api";
-import { useI18n, useRoleLabel } from "../lib/i18n";
 
 /** الرئيسية — نموذج أسانا: تحية، إحصاءات، وبطاقات مهامي والمشاريع والأشخاص */
 export default function Home({ me }: { me: Me }) {
-  const { t } = useI18n();
-  const roleLabel = useRoleLabel();
   const pane = useTaskPane();
   const [tab, setTab] = useState<"upcoming" | "overdue" | "completed">("upcoming");
   const [newProject, setNewProject] = useState(false);
 
-  const myKey = `/api/tasks?mine=1&roots=1`;
+  const myKey = `/api/tasks?assigneeId=${me.id}&roots=1`;
   const { data: tasksData, isLoading } = useQuery<TaskRow[] | null>({ queryKey: [myKey] });
   const { data: projectsData } = useQuery<ProjectRow[] | null>({ queryKey: ["/api/projects"] });
   const { data: usersData } = useQuery<UserLite[] | null>({ queryKey: ["/api/users"] });
@@ -51,10 +49,10 @@ export default function Home({ me }: { me: Me }) {
     );
 
   const TABS = [
-    { key: "upcoming" as const, label: t("home.upcoming") },
-    { key: "overdue" as const, label: t("home.overdue"), count: lists.overdue.length },
-    { key: "completed" as const, label: t("home.completed") },
-  ];
+    { key: "upcoming", label: "قادمة" },
+    { key: "overdue", label: "متأخرة", count: lists.overdue.length },
+    { key: "completed", label: "مكتملة" },
+  ] as const;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -65,12 +63,12 @@ export default function Home({ me }: { me: Me }) {
         <div className="mt-3 inline-flex items-center gap-4 rounded-chip border border-line bg-surface px-5 py-2 text-xs font-semibold text-ink-2">
           <span className="flex items-center gap-1.5">
             <Check size={14} className="text-success" />
-            {t("home.doneThisWeek", { n: doneThisWeek })}
+            <b className="tabular-nums">{doneThisWeek}</b> مهمة أكملتها هذا الأسبوع
           </span>
           <span className="h-4 w-px bg-line" />
           <span className="flex items-center gap-1.5">
             <Users size={14} className="text-review" />
-            {t("home.members", { n: users.length })}
+            <b className="tabular-nums">{users.length}</b> عضو في المساحة
           </span>
         </div>
       </div>
@@ -79,27 +77,25 @@ export default function Home({ me }: { me: Me }) {
         {/* ─── بطاقة مهامي ─── */}
         <section className="rounded-card border border-line bg-surface shadow-card">
           <div className="flex items-center gap-3 border-b border-line-soft px-4 pt-3">
-            <Avatar name={me.name} color={me.avatarColor} src={me.avatarUrl} size={8} />
+            <Avatar name={me.name} color={me.avatarColor} size={8} />
             <div className="flex-1">
-              <Link href="/my" className="text-sm font-bold hover:text-saffron">
-                {t("home.myTasks")}
-              </Link>
+              <Link href="/my" className="text-sm font-bold hover:text-saffron">مهامي</Link>
               <div className="flex gap-4 pt-1.5">
-                {TABS.map((tabItem) => (
+                {TABS.map((t) => (
                   <button
-                    key={tabItem.key}
-                    onClick={() => setTab(tabItem.key)}
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
                     className={clsx(
                       "border-b-2 pb-1.5 text-xs font-semibold",
-                      tab === tabItem.key
+                      tab === t.key
                         ? "border-saffron text-ink"
                         : "border-transparent text-ink-3 hover:text-ink",
                     )}
                   >
-                    {tabItem.label}
-                    {"count" in tabItem && (tabItem.count ?? 0) > 0 && (
-                      <span className="ms-1 rounded-chip bg-danger/10 px-1.5 text-[10px] font-bold text-danger tabular-nums">
-                        {tabItem.count}
+                    {t.label}
+                    {"count" in t && (t.count ?? 0) > 0 && (
+                      <span className="mr-1 rounded-chip bg-danger/10 px-1.5 text-[10px] font-bold text-danger tabular-nums">
+                        {t.count}
                       </span>
                     )}
                   </button>
@@ -109,40 +105,35 @@ export default function Home({ me }: { me: Me }) {
           </div>
           <div className="max-h-80 overflow-y-auto">
             {isLoading && <Spinner />}
-            {(lists[tab] ?? []).slice(0, 12).map((task) => (
+            {(lists[tab] ?? []).slice(0, 12).map((t) => (
               <div
-                key={task.id}
+                key={t.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => pane.open(task.id)}
-                onKeyDown={(e) => e.key === "Enter" && pane.open(task.id)}
-                className="flex h-10 w-full cursor-pointer items-center gap-2.5 border-b border-line-soft px-4 text-start text-sm hover:bg-line-soft/40"
+                onClick={() => pane.open(t.id)}
+                onKeyDown={(e) => e.key === "Enter" && pane.open(t.id)}
+                className="flex h-10 w-full cursor-pointer items-center gap-2.5 border-b border-line-soft px-4 text-right text-sm hover:bg-line-soft/40"
               >
                 <CheckCircle
-                  checked={task.isCompleted}
+                  checked={t.isCompleted}
                   size={16}
-                  onToggle={(next) => patch(task.id, { isCompleted: next })}
+                  onToggle={(next) => patch(t.id, { isCompleted: next })}
                 />
-                <span className={clsx("min-w-0 flex-1 truncate font-semibold", task.isCompleted && "text-ink-3")}>
-                  {task.title}
+                <span className={clsx("min-w-0 flex-1 truncate font-semibold", t.isCompleted && "text-ink-3")}>
+                  {t.title}
                 </span>
-                <CollaboratorStack
-                  people={(task.watchers ?? []).map((w: NonNullable<TaskRow["watchers"]>[number]) => w.user)}
-                  max={3}
-                  size={5}
-                />
-                {task.project && (
+                {t.project && (
                   <span className="hidden max-w-32 flex-none items-center gap-1 truncate text-[11px] text-ink-3 sm:flex">
-                    <ProjectDot color={task.project.color} size={7} />
-                    <span className="truncate">{task.project.name}</span>
+                    <ProjectDot color={t.project.color} size={7} />
+                    <span className="truncate">{t.project.name}</span>
                   </span>
                 )}
-                <DueText task={task} />
+                <DueText task={t} />
               </div>
             ))}
             {!isLoading && !(lists[tab] ?? []).length && (
               <div className="px-4 py-10 text-center text-xs text-ink-3">
-                {tab === "overdue" ? t("home.noOverdue") : t("home.noTasks")}
+                {tab === "overdue" ? "لا مهام متأخرة — ممتاز" : "لا مهام هنا"}
               </div>
             )}
           </div>
@@ -150,16 +141,16 @@ export default function Home({ me }: { me: Me }) {
             href="/my"
             className="flex items-center justify-center gap-1 border-t border-line-soft py-2 text-xs font-semibold text-ink-3 hover:text-saffron"
           >
-            {t("home.viewAllMyTasks")} <ChevronLeft size={13} />
+            عرض كل مهامي <ChevronLeft size={13} />
           </Link>
         </section>
 
         {/* ─── بطاقة المشاريع ─── */}
         <section className="rounded-card border border-line bg-surface p-4 shadow-card">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-bold">{t("home.projects")}</span>
+            <span className="text-sm font-bold">المشاريع</span>
             <Link href="/projects" className="text-xs font-semibold text-ink-3 hover:text-saffron">
-              {t("viewAll")}
+              عرض الكل
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -170,7 +161,7 @@ export default function Home({ me }: { me: Me }) {
               <span className="flex h-9 w-9 items-center justify-center rounded-field border border-dashed border-current">
                 <Plus size={16} />
               </span>
-              {t("home.createProject")}
+              إنشاء مشروع
             </button>
             {projects.slice(0, 7).map((p) => (
               <Link
@@ -187,7 +178,7 @@ export default function Home({ me }: { me: Me }) {
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-bold">{p.name}</span>
                   <span className="block text-[11px] text-ink-3 tabular-nums">
-                    {t("home.projectTaskSummary", { tasks: p.taskCount ?? 0, done: p.doneCount ?? 0 })}
+                    {p.taskCount ?? 0} مهمة · {p.doneCount ?? 0} مكتملة
                   </span>
                 </span>
               </Link>
@@ -195,20 +186,23 @@ export default function Home({ me }: { me: Me }) {
           </div>
         </section>
 
+        {/* ─── خط النشاط: كل خطوة في المساحة ─── */}
+        <ActivityFeed />
+
         {/* ─── بطاقة الأشخاص ─── */}
-        <section className="rounded-card border border-line bg-surface p-4 shadow-card lg:col-span-2">
+        <section className="rounded-card border border-line bg-surface p-4 shadow-card">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-bold">{t("home.people")}</span>
+            <span className="text-sm font-bold">الأشخاص</span>
             <Link href="/teams" className="text-xs font-semibold text-ink-3 hover:text-saffron">
-              {t("home.viewTeams")}
+              عرض الفرق
             </Link>
           </div>
           <div className="flex flex-wrap gap-3">
             {users.map((u) => (
               <div key={u.id} className="flex w-24 flex-col items-center gap-1 rounded-field px-2 py-2 text-center hover:bg-line-soft/40">
-                <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={9} />
+                <Avatar name={u.name} color={u.avatarColor} size={9} />
                 <span className="w-full truncate text-[11px] font-semibold">{u.name}</span>
-                <span className="text-[10px] text-ink-3">{roleLabel(u.role)}</span>
+                <span className="text-[10px] text-ink-3">{u.roleLabel}</span>
               </div>
             ))}
           </div>

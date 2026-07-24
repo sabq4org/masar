@@ -43,11 +43,9 @@ export const users = pgTable(
     email: varchar("email", { length: 255 }).notNull().unique(),
     passwordHash: text("password_hash").notNull(),
     name: text("name").notNull(),
-    role: varchar("role", { length: 40 }).notNull().default("member"),
+    role: varchar("role", { length: 40 }).notNull().default("editor"),
     departmentId: integer("department_id").references(() => departments.id),
     avatarColor: varchar("avatar_color", { length: 7 }).notNull().default("#475569"),
-    /** مسار صورة عامة مثل /avatars/ali.jpg — إن وُجدت تُعرض بدل الحرف الملوّن */
-    avatarUrl: text("avatar_url"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -270,7 +268,7 @@ export const taskActivity = pgTable(
     detail: jsonb("detail"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (t) => [index("activity_task_idx").on(t.taskId)],
+  (t) => [index("activity_task_idx").on(t.taskId), index("activity_created_idx").on(t.createdAt)],
 );
 
 // ─── الاعتماديات: المهمة محجوبة بمهمة أخرى ─────────────────────────

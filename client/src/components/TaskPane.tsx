@@ -4,7 +4,6 @@ import clsx from "clsx";
 import {
   Check,
   ChevronsLeft,
-  ChevronsRight,
   CircleAlert,
   Copy,
   Diamond,
@@ -21,24 +20,33 @@ import {
 import { api, queryClient } from "../lib/api";
 import type { Me, ProjectRow, TaskDetail, UserLite } from "../lib/types";
 import { relTime } from "../lib/dates";
-import type { MsgKey } from "../locales/en";
-import { useI18n } from "../lib/i18n";
 import { Avatar, CheckCircle, ErrorBar } from "./bits";
 import { AssigneePicker, DueDatePicker, Popover, PriorityPicker } from "./pickers";
 import { useTaskPane } from "../lib/taskPane";
 
-function fmtSize(bytes: number, t: ReturnType<typeof useI18n>["t"]) {
-  if (bytes < 1024) return t("fileSize.bytes", { n: bytes });
-  if (bytes < 1024 * 1024) return t("fileSize.kb", { n: Math.round(bytes / 1024) });
-  return t("fileSize.mb", { n: (bytes / 1024 / 1024).toFixed(1) });
+const ACTIVITY_LABELS: Record<string, string> = {
+  created: "أنشأ المهمة",
+  assigned: "غيّر المسؤول",
+  updated: "عدّل المهمة",
+  completed: "أكمل المهمة",
+  uncompleted: "أعاد فتح المهمة",
+  due_changed: "غيّر تاريخ الاستحقاق",
+  subtask_added: "أضاف مهمة فرعية",
+  dependency_added: "أضاف اعتمادية",
+  attachment_added: "أرفق ملفًا",
+  liked: "أُعجب بالمهمة",
+  approval_decided: "بتّ في الاعتماد",
+  ai_split: "قسّم المهمة بالذكاء الاصطناعي",
+};
+
+function fmtSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} ب`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} ك.ب`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} م.ب`;
 }
 
 export default function TaskPane() {
-  const { t, dir } = useI18n();
   const { taskId, open, close } = useTaskPane();
-  /** مقابل الشريط الجانبي: يمين في الإنجليزية (LTR)، يسار في العربية (RTL) */
-  const sheetSide =
-    "fixed inset-y-0 end-0 z-40 w-full max-w-2xl border-s border-line bg-surface shadow-xl";
   const [error, setError] = useState<string | null>(null);
   const [comment, setComment] = useState("");
   const [subtaskTitle, setSubtaskTitle] = useState("");
@@ -67,6 +75,15 @@ export default function TaskPane() {
     setAddingSubtask(false);
     setMenuOpen(false);
   }, [taskId]);
+
+  // تمدد العنوان تلقائيًا على قدر النص
+  useEffect(() => {
+    const el = titleRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+  }, [taskId, task?.title]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -104,16 +121,10 @@ export default function TaskPane() {
   if (!taskId) return null;
   if (!task)
     return (
-      <aside className={clsx("masar-sheet p-6 text-sm text-ink-3", sheetSide)}>
-        {t("loading")}
+      <aside className="masar-sheet fixed inset-y-0 left-0 z-40 w-full max-w-2xl border-r border-line bg-surface p-6 text-sm text-ink-3 shadow-xl">
+        جارٍ التحميل…
       </aside>
     );
-
-  const activityLabel = (action: string) => {
-    const key = `activity.${action}` as MsgKey;
-    const label = t(key);
-    return label === key ? "" : label;
-  };
 
   const me = meData ?? null;
   const isCollaborator = me ? task.watchers.some((w) => w.userId === me.id) : false;
@@ -125,14 +136,14 @@ export default function TaskPane() {
     | { kind: "comment"; id: string; at: string; c: TaskDetail["comments"][number] }
   > = [
     ...task.activity
-      .filter((a) => activityLabel(a.action))
+      .filter((a) => ACTIVITY_LABELS[a.action])
       .map((a) => ({
         kind: "activity" as const,
         id: `a${a.id}`,
         at: a.createdAt,
         node: (
           <span>
-            <b>{a.user?.name ?? t("activity.system")}</b> {activityLabel(a.action)}
+            <b>{a.user?.name ?? "النظام"}</b> {ACTIVITY_LABELS[a.action]}
             <span className="mx-1.5 text-ink-3">·</span>
             <span className="text-ink-3">{relTime(a.createdAt)}</span>
           </span>
@@ -144,7 +155,7 @@ export default function TaskPane() {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-ink/10 lg:hidden" onClick={close} />
-      <aside className={clsx("masar-sheet flex flex-col", sheetSide)}>
+      <aside className="masar-sheet fixed inset-y-0 left-0 z-40 flex w-full max-w-2xl flex-col border-r border-line bg-surface shadow-xl">
         {/* ─── شريط الأدوات العلوي ─── */}
         <div className="flex flex-none items-center gap-1.5 border-b border-line px-3 py-2.5">
           <button
@@ -157,7 +168,7 @@ export default function TaskPane() {
             )}
           >
             <Check size={14} strokeWidth={3} />
-            {task.isCompleted ? t("tasks.completedStatus") : t("tasks.complete")}
+            {task.isCompleted ? "مكتملة" : "وضع علامة الإكمال"}
           </button>
 
           <div className="flex-1" />
@@ -170,7 +181,7 @@ export default function TaskPane() {
               "flex items-center gap-1 rounded-field px-2 py-1 text-xs font-semibold",
               task.likedByMe ? "text-saffron" : "text-ink-3 hover:text-saffron",
             )}
-            title={t("tasks.like")}
+            title="إعجاب"
           >
             <ThumbsUp size={15} />
             {task.likes.length > 0 && <span className="tabular-nums">{task.likes.length}</span>}
@@ -178,19 +189,19 @@ export default function TaskPane() {
           <button
             onClick={() => fileRef.current?.click()}
             className="rounded-field p-1.5 text-ink-3 hover:text-saffron"
-            title={t("tasks.attachFile")}
+            title="إرفاق ملف"
           >
             <Paperclip size={15} />
           </button>
           <button
             onClick={() => {
               navigator.clipboard?.writeText(`${location.origin}/task/${task.id}`).then(
-                () => flash(t("tasks.linkCopied")),
-                () => flash(t("tasks.copyFailed")),
+                () => flash("نُسخ رابط المهمة"),
+                () => flash("تعذر النسخ"),
               );
             }}
             className="rounded-field p-1.5 text-ink-3 hover:text-saffron"
-            title={t("tasks.copyLink")}
+            title="نسخ الرابط"
           >
             <Link2 size={15} />
           </button>
@@ -198,7 +209,7 @@ export default function TaskPane() {
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="rounded-field p-1.5 text-ink-3 hover:text-ink"
-              title={t("more")}
+              title="المزيد"
             >
               <MoreHorizontal size={16} />
             </button>
@@ -210,47 +221,47 @@ export default function TaskPane() {
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
               >
-                <Copy size={13} /> {t("tasks.duplicate")}
+                <Copy size={13} /> نسخ المهمة
               </button>
               <div className="my-1 border-t border-line-soft" />
-              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">{t("tasks.taskType")}</div>
+              <div className="px-2 py-1 text-[10px] font-bold text-ink-3">نوع المهمة</div>
               {(
                 [
-                  ["task", t("tasks.typeNormal")],
-                  ["milestone", t("tasks.typeMilestone")],
-                  ["approval", t("tasks.typeApproval")],
+                  ["task", "مهمة عادية"],
+                  ["milestone", "معلم رئيسي"],
+                  ["approval", "اعتماد"],
                 ] as const
-              ).map(([type, label]) => (
+              ).map(([t, label]) => (
                 <button
-                  key={type}
+                  key={t}
                   onClick={() => {
                     setMenuOpen(false);
-                    patch.mutate({ taskType: type });
+                    patch.mutate({ taskType: t });
                   }}
                   className={clsx(
                     "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft",
-                    task.taskType === type && "text-saffron",
+                    task.taskType === t && "text-saffron",
                   )}
                 >
-                  {type === "milestone" ? <Diamond size={12} /> : <Check size={12} />} {label}
+                  {t === "milestone" ? <Diamond size={12} /> : <Check size={12} />} {label}
                 </button>
               ))}
               <div className="my-1 border-t border-line-soft" />
               <button
                 onClick={() => {
-                  if (!confirm(t("tasks.deleteConfirm"))) return;
+                  if (!confirm("حذف المهمة نهائيًا؟")) return;
                   setMenuOpen(false);
                   act.mutate({ method: "DELETE", url: key });
                   close();
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold text-danger hover:bg-danger/10"
               >
-                <Trash2 size={13} /> {t("tasks.deleteTask")}
+                <Trash2 size={13} /> حذف المهمة
               </button>
             </Popover>
           </div>
-          <button onClick={close} className="rounded-field p-1.5 text-ink-3 hover:text-ink" title={`${t("close")} (Esc)`}>
-            {dir === "ltr" ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+          <button onClick={close} className="rounded-field p-1.5 text-ink-3 hover:text-ink" title="إغلاق (Esc)">
+            <ChevronsLeft size={16} />
           </button>
         </div>
 
@@ -261,7 +272,7 @@ export default function TaskPane() {
               onClick={() => open(task.parent!.id)}
               className="mx-4 mt-3 flex items-center gap-1.5 text-xs font-semibold text-ink-3 hover:text-saffron"
             >
-              <span className="text-ink-3">{t("tasks.subtaskOf")}</span>
+              <span className="text-ink-3">مهمة فرعية من:</span>
               <span className="underline decoration-dotted">{task.parent.title}</span>
             </button>
           )}
@@ -269,7 +280,7 @@ export default function TaskPane() {
             <div className="mx-4 mt-3 flex items-start gap-2 rounded-field border border-wait/40 bg-wait/10 px-3 py-2 text-xs font-semibold text-wait">
               <Lock size={14} className="mt-0.5 flex-none" />
               <div>
-                {t("tasks.blockedByAlert")}
+                هذه المهمة محجوبة بـ:
                 {openDeps.map((d) => (
                   <button
                     key={d.id}
@@ -286,10 +297,10 @@ export default function TaskPane() {
             <div className="mx-4 mt-3 rounded-field border border-review/30 bg-review/5 px-3 py-2.5">
               <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-review">
                 <CircleAlert size={14} />
-                {t("tasks.approval")}
-                {task.approvalStatus === "approved" && t("tasks.approved")}
-                {task.approvalStatus === "changes_requested" && t("tasks.changesRequested")}
-                {task.approvalStatus === "rejected" && t("tasks.rejected")}
+                مهمة اعتماد
+                {task.approvalStatus === "approved" && " — معتمدة ✓"}
+                {task.approvalStatus === "changes_requested" && " — طُلبت تعديلات"}
+                {task.approvalStatus === "rejected" && " — مرفوضة"}
               </div>
               {task.approvalStatus === "pending" && (
                 <div className="flex flex-wrap gap-1.5">
@@ -297,19 +308,19 @@ export default function TaskPane() {
                     onClick={() => act.mutate({ method: "POST", url: `${key}/approval`, body: { decision: "approved" } })}
                     className="rounded-field bg-success px-3 py-1 text-xs font-bold text-paper hover:opacity-90"
                   >
-                    {t("tasks.approve")}
+                    اعتماد
                   </button>
                   <button
                     onClick={() => act.mutate({ method: "POST", url: `${key}/approval`, body: { decision: "changes_requested" } })}
                     className="rounded-field border border-wait px-3 py-1 text-xs font-bold text-wait hover:bg-wait/10"
                   >
-                    {t("tasks.requestChanges")}
+                    طلب تعديل
                   </button>
                   <button
                     onClick={() => act.mutate({ method: "POST", url: `${key}/approval`, body: { decision: "rejected" } })}
                     className="rounded-field border border-danger px-3 py-1 text-xs font-bold text-danger hover:bg-danger/10"
                   >
-                    {t("tasks.reject")}
+                    رفض
                   </button>
                 </div>
               )}
@@ -341,20 +352,27 @@ export default function TaskPane() {
 
           {/* ─── الحقول ─── */}
           <div className="mt-2 space-y-1 px-6">
-            <FieldRow label={t("tasks.assignee")}>
+            <FieldRow label="المسؤول">
               <AssigneePicker
                 value={task.assignee ?? null}
                 onChange={(userId) => patch.mutate({ assigneeId: userId })}
               />
             </FieldRow>
-            <FieldRow label={t("tasks.due")}>
+            <FieldRow label="تاريخ الاستحقاق">
               <DueDatePicker
                 value={task.dueAt}
                 isCompleted={task.isCompleted}
                 onChange={(iso) => patch.mutate({ dueAt: iso })}
               />
             </FieldRow>
-            <FieldRow label={t("tasks.project")}>
+            <FieldRow label="تاريخ البدء">
+              <DueDatePicker
+                value={task.startAt}
+                isCompleted={task.isCompleted}
+                onChange={(iso) => patch.mutate({ startAt: iso })}
+              />
+            </FieldRow>
+            <FieldRow label="المشروع">
               <div className="flex items-center gap-1.5">
                 <select
                   value={task.projectId ?? ""}
@@ -366,7 +384,7 @@ export default function TaskPane() {
                   }
                   className="max-w-44 rounded-field border border-transparent bg-transparent px-1 py-0.5 text-xs font-semibold hover:border-line focus:outline-none"
                 >
-                  <option value="">{t("tasks.noProject")}</option>
+                  <option value="">بلا مشروع</option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -379,7 +397,7 @@ export default function TaskPane() {
                     }
                     className="max-w-36 rounded-field border border-transparent bg-transparent px-1 py-0.5 text-xs text-ink-2 hover:border-line focus:outline-none"
                   >
-                    <option value="">{t("tasks.noSection")}</option>
+                    <option value="">بلا قسم</option>
                     {(projectDetail?.sections ?? []).map((s) => (
                       <option key={s.id} value={s.id}>{s.title}</option>
                     ))}
@@ -387,11 +405,14 @@ export default function TaskPane() {
                 )}
               </div>
             </FieldRow>
-            <FieldRow label={t("tasks.priority")}>
+            <FieldRow label="الأولوية">
               <PriorityPicker value={task.priority} onChange={(p) => patch.mutate({ priority: p })} />
             </FieldRow>
+            <FieldRow label="الوسوم">
+              <TagsEditor tags={task.tags} onChange={(tags) => patch.mutate({ tags })} />
+            </FieldRow>
             {task.linkUrl && (
-              <FieldRow label={t("tasks.referenceLink")}>
+              <FieldRow label="رابط مرجعي">
                 <a
                   href={task.linkUrl}
                   target="_blank"
@@ -407,11 +428,11 @@ export default function TaskPane() {
 
           {/* ─── الوصف ─── */}
           <div className="mt-3 px-6">
-            <div className="mb-1 text-xs font-bold text-ink-2">{t("tasks.description")}</div>
+            <div className="mb-1 text-xs font-bold text-ink-2">الوصف</div>
             <textarea
               key={task.id + (task.description ?? "")}
               defaultValue={task.description ?? ""}
-              placeholder={t("tasks.descriptionPlaceholder")}
+              placeholder="عمّ تدور هذه المهمة؟"
               rows={3}
               onBlur={(e) => {
                 const v = e.target.value;
@@ -425,7 +446,7 @@ export default function TaskPane() {
           <div className="mt-3 px-6">
             <div className="mb-1 flex items-center justify-between">
               <div className="text-xs font-bold text-ink-2">
-                {t("tasks.subtasks")}
+                المهام الفرعية
                 {task.subtasks.length > 0 && (
                   <span className="mr-1.5 text-[10px] font-semibold text-ink-3 tabular-nums">
                     {doneSubtasks}/{task.subtasks.length}
@@ -444,7 +465,7 @@ export default function TaskPane() {
                   <span className={clsx("min-w-0 flex-1 truncate text-sm", s.isCompleted && "text-ink-3")}>
                     {s.title}
                   </span>
-                  {s.assignee && <Avatar name={s.assignee.name} color={s.assignee.avatarColor} src={s.assignee.avatarUrl} size={5} />}
+                  {s.assignee && <Avatar name={s.assignee.name} color={s.assignee.avatarColor} size={5} />}
                 </div>
               ))}
               {addingSubtask ? (
@@ -469,7 +490,7 @@ export default function TaskPane() {
                       setSubtaskTitle("");
                       setAddingSubtask(false);
                     }}
-                    placeholder={t("tasks.subtaskName")}
+                    placeholder="اسم المهمة الفرعية…"
                     className="w-full bg-transparent text-sm focus:outline-none"
                   />
                 </form>
@@ -478,7 +499,7 @@ export default function TaskPane() {
                   onClick={() => setAddingSubtask(true)}
                   className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-ink-3 hover:text-saffron"
                 >
-                  <Plus size={13} /> {t("tasks.addSubtask")}
+                  <Plus size={13} /> إضافة مهمة فرعية
                 </button>
               )}
             </div>
@@ -487,13 +508,13 @@ export default function TaskPane() {
           {/* ─── الاعتماديات ─── */}
           <div className="mt-3 px-6">
             <div className="mb-1 flex items-center justify-between">
-              <div className="text-xs font-bold text-ink-2">{t("tasks.blockedBy")}</div>
+              <div className="text-xs font-bold text-ink-2">محجوبة بـ</div>
               <div className="relative">
                 <button
                   onClick={() => setDepOpen(!depOpen)}
                   className="flex items-center gap-1 text-xs font-semibold text-ink-3 hover:text-saffron"
                 >
-                  <Plus size={12} /> {t("tasks.addDependency")}
+                  <Plus size={12} /> إضافة
                 </button>
                 <DependencyPicker
                   open={depOpen}
@@ -518,7 +539,7 @@ export default function TaskPane() {
                     )}
                   >
                     <button onClick={() => d.task && open(d.task.id)} className="hover:underline">
-                      {d.task?.title ?? t("tasks.deletedTask")}
+                      {d.task?.title ?? "مهمة محذوفة"}
                     </button>
                     <button
                       onClick={() => act.mutate({ method: "DELETE", url: `${key}/dependencies/${d.id}` })}
@@ -530,14 +551,14 @@ export default function TaskPane() {
                 ))}
               </div>
             ) : (
-              <div className="text-xs text-ink-3">{t("tasks.dependencies")}</div>
+              <div className="text-xs text-ink-3">لا اعتماديات — المهمة طليقة</div>
             )}
           </div>
 
           {/* ─── المرفقات ─── */}
           {task.attachments.length > 0 && (
             <div className="mt-3 px-6">
-              <div className="mb-1 text-xs font-bold text-ink-2">{t("tasks.attachments")}</div>
+              <div className="mb-1 text-xs font-bold text-ink-2">المرفقات</div>
               <div className="grid grid-cols-2 gap-1.5">
                 {task.attachments.map((a) => (
                   <div
@@ -554,7 +575,7 @@ export default function TaskPane() {
                     >
                       {a.originalName}
                     </a>
-                    <span className="flex-none text-[10px] text-ink-3 tabular-nums">{fmtSize(a.size, t)}</span>
+                    <span className="flex-none text-[10px] text-ink-3 tabular-nums">{fmtSize(a.size)}</span>
                     <button
                       onClick={() => act.mutate({ method: "DELETE", url: `/api/attachments/${a.id}` })}
                       className="hidden flex-none text-ink-3 hover:text-danger group-hover:block"
@@ -570,17 +591,17 @@ export default function TaskPane() {
           {/* ─── المتعاونون ─── */}
           <div className="mt-4 border-t border-line-soft bg-paper/60 px-6 py-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-ink-2">{t("tasks.collaborators")}</span>
+              <span className="text-xs font-bold text-ink-2">المتعاونون</span>
               <div className="flex -space-x-1 space-x-reverse">
                 {task.watchers.map((w) => (
-                  <Avatar key={w.userId} name={w.user.name} color={w.user.avatarColor} src={w.user.avatarUrl} size={6} />
+                  <Avatar key={w.userId} name={w.user.name} color={w.user.avatarColor} size={6} />
                 ))}
               </div>
               <div className="relative">
                 <button
                   onClick={() => setCollabOpen(!collabOpen)}
                   className="flex h-6 w-6 items-center justify-center rounded-chip border border-dashed border-ink-3/50 text-ink-3 hover:border-saffron hover:text-saffron"
-                  title={t("tasks.addCollaborator")}
+                  title="إضافة متعاون"
                 >
                   <UserPlus size={12} />
                 </button>
@@ -596,7 +617,7 @@ export default function TaskPane() {
                         }}
                         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-right text-xs font-semibold hover:bg-line-soft"
                       >
-                        <Avatar name={u.name} color={u.avatarColor} src={u.avatarUrl} size={6} />
+                        <Avatar name={u.name} color={u.avatarColor} size={6} />
                         {u.name}
                       </button>
                     ))}
@@ -612,7 +633,7 @@ export default function TaskPane() {
                   }
                   className="text-xs font-semibold text-ink-3 hover:text-saffron"
                 >
-                  {isCollaborator ? t("tasks.leave") : t("tasks.join")}
+                  {isCollaborator ? "مغادرة المهمة" : "الانضمام للمهمة"}
                 </button>
               )}
             </div>
@@ -627,7 +648,7 @@ export default function TaskPane() {
                 <CommentBubble key={item.id} c={item.c} meId={me?.id ?? 0} act={act} />
               ),
             )}
-            {feed.length === 0 && <div className="text-xs text-ink-3">{t("tasks.noActivity")}</div>}
+            {feed.length === 0 && <div className="text-xs text-ink-3">لا نشاط بعد</div>}
           </div>
         </div>
 
@@ -643,7 +664,7 @@ export default function TaskPane() {
             }}
             className="flex items-start gap-2"
           >
-            {me && <Avatar name={me.name} color={me.avatarColor} src={me.avatarUrl} size={7} />}
+            {me && <Avatar name={me.name} color={me.avatarColor} size={7} />}
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -653,7 +674,7 @@ export default function TaskPane() {
                   (e.currentTarget.form as HTMLFormElement)?.requestSubmit();
                 }
               }}
-              placeholder={t("tasks.commentPlaceholder")}
+              placeholder="أضف تعليقًا… (Ctrl+Enter للإرسال)"
               rows={comment.includes("\n") ? 3 : 1}
               className="min-w-0 flex-1 resize-none rounded-field border border-line bg-paper px-3 py-1.5 text-sm focus:border-saffron focus:outline-none"
             />
@@ -662,7 +683,7 @@ export default function TaskPane() {
               disabled={!comment.trim()}
               className="rounded-field bg-accent px-3 py-1.5 text-xs font-bold text-paper hover:opacity-90 disabled:opacity-40"
             >
-              {t("tasks.comment")}
+              تعليق
             </button>
           </form>
         </div>
@@ -678,7 +699,7 @@ export default function TaskPane() {
             const fd = new FormData();
             fd.append("file", file);
             const res = await fetch(`${key}/attachments`, { method: "POST", body: fd, credentials: "include" });
-            if (!res.ok) flash((await res.json().catch(() => ({})))?.error ?? t("tasks.uploadFailed"));
+            if (!res.ok) flash((await res.json().catch(() => ({})))?.error ?? "فشل الرفع");
             invalidate();
           }}
         />
@@ -725,20 +746,14 @@ function CommentBubble({
   meId,
   act,
 }: {
-  c: {
-    id: number;
-    content: string;
-    createdAt: string;
-    user: { id: number; name: string; avatarColor: string; avatarUrl?: string | null };
-    likes: { userId: number }[];
-  };
+  c: { id: number; content: string; createdAt: string; user: { id: number; name: string; avatarColor: string }; likes: { userId: number }[] };
   meId: number;
   act: any;
 }) {
   const liked = c.likes.some((l) => l.userId === meId);
   return (
     <div className="flex items-start gap-2">
-      <Avatar name={c.user.name} color={c.user.avatarColor} src={c.user.avatarUrl} size={7} />
+      <Avatar name={c.user.name} color={c.user.avatarColor} size={7} />
       <div className="min-w-0 flex-1 rounded-field border border-line-soft bg-paper/70 px-3 py-2">
         <div className="mb-0.5 flex items-baseline gap-2">
           <span className="text-xs font-bold">{c.user.name}</span>
@@ -763,6 +778,44 @@ function CommentBubble({
   );
 }
 
+/** محرر الوسوم — أقراص تُضاف بـEnter وتُحذف بالنقر */
+function TagsEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
+  const [value, setValue] = useState("");
+  const add = () => {
+    const v = value.trim().replace(/,/g, "");
+    if (v && !tags.includes(v) && tags.length < 20) onChange([...tags, v]);
+    setValue("");
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {tags.map((t) => (
+        <button
+          key={t}
+          onClick={() => onChange(tags.filter((x) => x !== t))}
+          className="group flex items-center gap-1 rounded-chip bg-line-soft px-2 py-0.5 text-[11px] font-bold text-ink-2 hover:bg-danger/10 hover:text-danger"
+          title="إزالة الوسم"
+        >
+          {t}
+          <X size={10} className="opacity-0 group-hover:opacity-100" />
+        </button>
+      ))}
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            add();
+          }
+        }}
+        onBlur={add}
+        placeholder={tags.length ? "" : "أضف وسمًا…"}
+        className="w-20 bg-transparent text-xs focus:outline-none"
+      />
+    </div>
+  );
+}
+
 function DependencyPicker({
   open,
   onClose,
@@ -774,7 +827,6 @@ function DependencyPicker({
   task: TaskDetail;
   onPick: (taskId: number) => void;
 }) {
-  const { t } = useI18n();
   const [q, setQ] = useState("");
   const { data } = useQuery<TaskDetail[] | null>({
     queryKey: [
@@ -794,7 +846,7 @@ function DependencyPicker({
         autoFocus
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={t("tasks.dependencySearch")}
+        placeholder="ابحث عن المهمة الحاجبة…"
         className="mb-1 w-full rounded-md border border-line bg-paper px-2 py-1 text-xs focus:outline-none"
       />
       <div className="max-h-48 overflow-y-auto">
@@ -810,7 +862,7 @@ function DependencyPicker({
             {t.title}
           </button>
         ))}
-        {!candidates.length && <div className="px-2 py-3 text-center text-xs text-ink-3">{t("noResults")}</div>}
+        {!candidates.length && <div className="px-2 py-3 text-center text-xs text-ink-3">لا نتائج</div>}
       </div>
     </Popover>
   );
