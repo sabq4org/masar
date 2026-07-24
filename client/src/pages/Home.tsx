@@ -20,6 +20,7 @@ export default function Home({ me }: { me: Me }) {
   const [tab, setTab] = useState<"upcoming" | "overdue" | "completed">("upcoming");
   const [newProject, setNewProject] = useState(false);
 
+  // نفس عقد «مهامي»: المسندة إليّ فقط (لا كل ما أنشأته كمدير)
   const myKey = `/api/tasks?mine=1&roots=1`;
   const { data: tasksData, isLoading } = useQuery<TaskRow[] | null>({ queryKey: [myKey] });
   const { data: projectsData } = useQuery<ProjectRow[] | null>({ queryKey: ["/api/projects"] });

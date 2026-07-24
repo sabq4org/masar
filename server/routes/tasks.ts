@@ -61,7 +61,10 @@ export function registerTaskRoutes(app: Express) {
     const filters: SQL[] = [eq(tasks.isArchived, q.archived === "1")];
 
     const canViewAll = roleHas(user.role, PERMISSIONS.VIEW_ALL);
-    if (!canViewAll || q.mine === "1") {
+    // mine=1 = مهامي (المسندة إليّ فقط) — مثل أسانا؛ بدونها غير المصرّح يرى المسندة أو التي أنشأها
+    if (q.mine === "1") {
+      filters.push(eq(tasks.assigneeId, user.id));
+    } else if (!canViewAll) {
       filters.push(
         or(eq(tasks.assigneeId, user.id), eq(tasks.createdById, user.id))!,
       );

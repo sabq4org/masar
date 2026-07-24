@@ -26,7 +26,8 @@ export default function MyTasks() {
 
   const { data: meData } = useQuery<Me | null>({ queryKey: ["/api/auth/me"] });
   const me = meData ?? null;
-  const tasksKey = `/api/tasks?assigneeId=${me?.id ?? 0}&roots=1${showCompleted ? "" : "&completed=0"}`;
+  // mine=1 = المسندة إليّ — متوافق مع بطاقة الرئيسية
+  const tasksKey = `/api/tasks?mine=1&roots=1${showCompleted ? "" : "&completed=0"}`;
   const { data: tasksData, isLoading } = useQuery<TaskRow[] | null>({
     queryKey: [tasksKey],
     enabled: !!me,
