@@ -382,6 +382,7 @@ export const en = {
   "activity.live": "Live",
   "activity.empty": "No activity yet — the first step will show up here",
   "activity.loadMore": "Show more",
+  "activity.collapse": "Show less",
   "activity.verb.created": "created",
   "activity.verb.assigned": "assigned",
   "activity.verb.updated": "updated",
