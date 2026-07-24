@@ -365,6 +365,7 @@ export const ar: Record<MsgKey, string> = {
   "activity.live": "مباشر",
   "activity.empty": "لا نشاط بعد — أول خطوة تُسجَّل هنا",
   "activity.loadMore": "عرض المزيد",
+  "activity.collapse": "طيّ",
   "activity.verb.created": "أنشأ",
   "activity.verb.assigned": "أسند",
   "activity.verb.updated": "عدّل",

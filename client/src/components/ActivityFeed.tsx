@@ -28,16 +28,21 @@ const ACTION_DOTS: Record<string, string> = {
   status_update: "var(--masar-ink-2)",
 };
 
-/** خط النشاط — كل خطوة في المساحة، لحظيًا (المسؤول يرى كل شيء) */
+const INITIAL_LIMIT = 5;
+const PAGE_STEP = 15;
+
+/** خط النشاط — آخر ٥ افتراضيًا، ثم المزيد / طي */
 export default function ActivityFeed() {
   const { t } = useI18n();
   const pane = useTaskPane();
-  const [limit, setLimit] = useState(25);
+  const [limit, setLimit] = useState(INITIAL_LIMIT);
   const { data } = useQuery<{ items: FeedItem[]; scope: "all" | "mine" } | null>({
     queryKey: [`/api/activity?limit=${limit}`],
     refetchInterval: 60_000,
   });
   const items = data?.items ?? [];
+  const hasMore = items.length >= limit && limit < 100;
+  const canCollapse = limit > INITIAL_LIMIT;
 
   const verbOf = (action: string) => {
     const key = `activity.verb.${action}` as MsgKey;
@@ -139,13 +144,27 @@ export default function ActivityFeed() {
         </div>
       </div>
 
-      {items.length >= limit && (
-        <button
-          onClick={() => setLimit((l) => Math.min(l + 25, 100))}
-          className="mt-2 w-full rounded-field border border-line-soft py-1.5 text-xs font-semibold text-ink-3 hover:border-saffron hover:text-saffron"
-        >
-          {t("activity.loadMore")}
-        </button>
+      {(hasMore || canCollapse) && (
+        <div className="mt-2 flex gap-2">
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setLimit((l) => Math.min(l + PAGE_STEP, 100))}
+              className="flex-1 rounded-field border border-line-soft py-1.5 text-xs font-semibold text-ink-3 hover:border-saffron hover:text-saffron"
+            >
+              {t("activity.loadMore")}
+            </button>
+          )}
+          {canCollapse && (
+            <button
+              type="button"
+              onClick={() => setLimit(INITIAL_LIMIT)}
+              className="flex-1 rounded-field border border-line-soft py-1.5 text-xs font-semibold text-ink-3 hover:border-saffron hover:text-saffron"
+            >
+              {t("activity.collapse")}
+            </button>
+          )}
+        </div>
       )}
     </section>
   );
